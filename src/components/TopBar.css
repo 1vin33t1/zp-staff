@@ -12,9 +12,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     height: 70px;
+    gap: 2rem;
 }
 
 .topbar-left .domain-name {
@@ -46,6 +47,31 @@
 .topbar-right {
     display: flex;
     align-items: center;
+    gap: 1.5rem;
+}
+
+.activity-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.timer-label {
+    font-size: 0.7rem;
+    color: #e5e7eb;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timer-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fbbf24;
+    font-family: 'Courier New', monospace;
 }
 
 .user-section {
@@ -55,8 +81,9 @@
 }
 
 .user-email {
-    font-weight: 500;
-    color: #e5e7eb;
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
 }
 
 .logout-btn {
@@ -71,17 +98,30 @@
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-.login-text {
-    color: #e5e7eb;
-    font-weight: 500;
-}
-
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .topbar {
         padding: 0 1rem;
     }
 
+    .topbar-content {
+        gap: 1rem;
+    }
+
+    .activity-timer {
+        padding: 0.4rem 0.8rem;
+    }
+
+    .timer-label {
+        font-size: 0.65rem;
+    }
+
+    .timer-value {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
     .topbar-content {
         height: 60px;
     }
@@ -94,7 +134,16 @@
         display: none;
     }
 
-    .user-email {
+    .activity-timer {
         display: none;
+    }
+
+    .user-email {
+        font-size: 0.85rem;
+    }
+
+    .logout-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
     }
 }
