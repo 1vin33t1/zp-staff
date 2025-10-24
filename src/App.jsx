@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard'
 import CreateApplication from './pages/CreateApplication'
 import ViewApplication from './pages/ViewApplication'
 import Profile from './pages/Profile'
+import Applicants from './pages/Applicants'
+import EditApplication from './pages/EditApplication'
 import './App.css'
 
 function App() {
@@ -16,7 +18,7 @@ function App() {
     const refreshTimerRef = useRef(null)
     const lastActivityRef = useRef(Date.now())
 
-    // Check authentication on mount
+    // Check authentication on mount - KEEP USER LOGGED IN ON REFRESH
     useEffect(() => {
         const token = localStorage.getItem('accessToken')
         const email = localStorage.getItem('userEmail')
@@ -28,26 +30,27 @@ function App() {
         }
     }, [])
 
-    // Auto-logout on page reload
+    // Auto-logout ONLY on tab/browser close (not on refresh)
     useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (isAuthenticated) {
-                e.preventDefault()
-                e.returnValue = 'You will be logged out if you reload the page.'
-            }
-        }
-
         const handleUnload = () => {
             if (isAuthenticated) {
-                handleLogout(false)
+                // Call logout API synchronously using sendBeacon
+                const token = localStorage.getItem('accessToken')
+                const blob = new Blob([JSON.stringify({})], { type: 'application/json' })
+                navigator.sendBeacon(
+                    'https://api.pranvidyatech.in/auth/logout/zp-staff',
+                    blob
+                )
+
+                // Clear storage
+                localStorage.removeItem('accessToken')
+                localStorage.removeItem('userEmail')
             }
         }
 
-        window.addEventListener('beforeunload', handleBeforeUnload)
         window.addEventListener('unload', handleUnload)
 
         return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload)
             window.removeEventListener('unload', handleUnload)
         }
     }, [isAuthenticated])
@@ -203,6 +206,22 @@ function App() {
                         element={
                             isAuthenticated ?
                                 <Profile /> :
+                                <Navigate to="/zp-staff" replace />
+                        }
+                    />
+                    <Route
+                        path="/zp-staff/:applicationId/applicants"
+                        element={
+                            isAuthenticated ?
+                                <Applicants /> :
+                                <Navigate to="/zp-staff" replace />
+                        }
+                    />
+                    <Route
+                        path="/zp-staff/:applicationId/edit"
+                        element={
+                            isAuthenticated ?
+                                <EditApplication /> :
                                 <Navigate to="/zp-staff" replace />
                         }
                     />

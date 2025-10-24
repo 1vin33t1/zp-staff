@@ -236,7 +236,7 @@ const CreateApplication = () => {
                             <input
                                 id="banner"
                                 type="file"
-                                onChange={(e) => e.target.files && handleFileUpload('banner', e.target.files)}
+                                onChange={(e) => handleFileUpload('banner', e.target.files[0])}
                                 accept="image/*"
                                 disabled={uploadingBanner || submitting}
                                 className="file-input"
@@ -253,7 +253,7 @@ const CreateApplication = () => {
                             <input
                                 id="description"
                                 type="file"
-                                onChange={(e) => e.target.files && handleFileUpload('description', e.target.files)}
+                                onChange={(e) => handleFileUpload('description', e.target.files[0])}
                                 accept=".pdf,.doc,.docx"
                                 disabled={uploadingDescription || submitting}
                                 className="file-input"
