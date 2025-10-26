@@ -64,20 +64,6 @@ const ApplicantDetail = () => {
         }
     }
 
-    const handleRowFieldChange = (rowIndex, field, value) => {
-        const updatedRows = [...formData.rows]
-        updatedRows[rowIndex][field] = value
-        setFormData({ ...formData, rows: updatedRows })
-
-        // Clear validation error for this field
-        const errorKey = `row-${rowIndex}-${field}`
-        if (validationErrors[errorKey]) {
-            const newErrors = { ...validationErrors }
-            delete newErrors[errorKey]
-            setValidationErrors(newErrors)
-        }
-    }
-
     const handleRowStatusChange = (rowIndex, status) => {
         const updatedRows = [...formData.rows]
         updatedRows[rowIndex].status = status
@@ -102,13 +88,22 @@ const ApplicantDetail = () => {
     }
 
     const calculateOverallStatus = (rows) => {
-        const allApproved = rows.every(row => row.status === 'Approve')
-        if (allApproved && rows.length > 0) {
+        // Check if all rows with documents are approved
+        const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
+        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve')
+
+        if (allApproved) {
             setFormData(prev => ({ ...prev, overallStatus: 'Fully Verified' }))
+        } else if (formData.overallStatus === 'Fully Verified') {
+            // Deselect Fully Verified if not all approved
+            setFormData(prev => ({ ...prev, overallStatus: 'Pending' }))
         }
     }
 
     const handleOverallStatusChange = (status) => {
+        // Don't allow manual selection of Fully Verified
+        if (status === 'Fully Verified') return
+
         setFormData({ ...formData, overallStatus: status })
 
         // Clear validation errors for overall status
@@ -119,20 +114,37 @@ const ApplicantDetail = () => {
         }
     }
 
+    const handleRowFieldChange = (rowIndex, field, value) => {
+        const updatedRows = [...formData.rows]
+        updatedRows[rowIndex][field] = value
+        setFormData({ ...formData, rows: updatedRows })
+
+        // Clear validation error for this field
+        const errorKey = `row-${rowIndex}-${field}`
+        if (validationErrors[errorKey]) {
+            const newErrors = { ...validationErrors }
+            delete newErrors[errorKey]
+            setValidationErrors(newErrors)
+        }
+    }
+
     const validateForm = () => {
         const errors = {}
 
-        // Validate each row
+        // Validate each row (only rows with documents need status)
         formData.rows.forEach((row, index) => {
-            // Check if status is selected
-            if (!row.status) {
-                errors[`row-${index}-status`] = 'Please select a status'
-            }
+            // Only validate status if document exists
+            if (row.documentProofUrl && row.documentProofUrl.trim() !== '') {
+                // Check if status is selected
+                if (!row.status) {
+                    errors[`row-${index}-status`] = 'Please select a status'
+                }
 
-            // Check if status reason is required
-            if ((row.status === 'Reject' || row.status === 'Not Clear') &&
-                (!row.statusReason || row.statusReason.trim().length < 10)) {
-                errors[`row-${index}-statusReason`] = 'Please provide a reason (minimum 10 characters)'
+                // Check if status reason is required
+                if ((row.status === 'Reject' || row.status === 'Not Clear') &&
+                    (!row.statusReason || row.statusReason.trim().length < 10)) {
+                    errors[`row-${index}-statusReason`] = 'Please provide a reason (minimum 10 characters)'
+                }
             }
         })
 
@@ -149,9 +161,15 @@ const ApplicantDetail = () => {
     const handleSubmit = () => {
         if (!validateForm()) {
             setError('Please fix all validation errors before submitting')
+            // Scroll to action buttons area
+            const actionButtons = document.querySelector('.action-section')
+            if (actionButtons) {
+                actionButtons.scrollIntoView({ behavior: 'smooth', block: 'end' })
+            }
             return
         }
 
+        setError('')
         setShowDisclaimer(true)
     }
 
@@ -203,21 +221,11 @@ const ApplicantDetail = () => {
 
         if (valueType === 'textbox') {
             return (
-                <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => handleRowFieldChange(rowIndex, valueField, e.target.value)}
-                    className="field-input"
-                />
+                <div className="field-display">{value}</div>
             )
         } else if (valueType === 'bigtextbox') {
             return (
-                <textarea
-                    value={value}
-                    onChange={(e) => handleRowFieldChange(rowIndex, valueField, e.target.value)}
-                    className="field-textarea"
-                    rows="3"
-                />
+                <div className="field-display multiline">{value}</div>
             )
         } else if (valueType === 'checkbox') {
             return (
@@ -228,6 +236,15 @@ const ApplicantDetail = () => {
         } else {
             return <div className="field-display">{value}</div>
         }
+    }
+
+    const getDocumentUrl = (url) => {
+        if (!url) return ''
+        // Add prefix if not already present
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url
+        }
+        return `https://files.gramsamruddhi.in/${url}`
     }
 
     if (loading) {
@@ -280,8 +297,6 @@ const ApplicantDetail = () => {
                 <div className="rows-container">
                     {formData.rows.map((row, rowIndex) => (
                         <div key={rowIndex} className="row-card">
-                            <h3 className="row-title">Field {rowIndex + 1}</h3>
-
                             {/* Field 1 */}
                             <div className="field-group">
                                 <label className="field-label">{row.key1}:</label>
@@ -297,69 +312,73 @@ const ApplicantDetail = () => {
                             )}
 
                             {/* Document Proof */}
-                            {row.documentProofUrl && (
+                            {row.documentProofUrl && row.documentProofUrl.trim() !== '' && (
                                 <div className="field-group">
                                     <label className="field-label">Document Proof:</label>
                                     <button
                                         className="document-btn"
-                                        onClick={() => window.open(row.documentProofUrl, '_blank')}
+                                        onClick={() => window.open(getDocumentUrl(row.documentProofUrl), '_blank')}
                                     >
                                         📄 View Document
                                     </button>
                                 </div>
                             )}
 
-                            {/* Status Buttons */}
-                            <div className="field-group">
-                                <label className="field-label">Verification Status:</label>
-                                <div className="status-buttons">
-                                    <button
-                                        className={`status-btn approve ${row.status === 'Approve' ? 'selected' : ''}`}
-                                        onClick={() => handleRowStatusChange(rowIndex, 'Approve')}
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        className={`status-btn reject ${row.status === 'Reject' ? 'selected' : ''}`}
-                                        onClick={() => handleRowStatusChange(rowIndex, 'Reject')}
-                                    >
-                                        Reject
-                                    </button>
-                                    <button
-                                        className={`status-btn not-clear ${row.status === 'Not Clear' ? 'selected' : ''}`}
-                                        onClick={() => handleRowStatusChange(rowIndex, 'Not Clear')}
-                                    >
-                                        Not Clear
-                                    </button>
-                                    <button
-                                        className={`status-btn not-verified ${row.status === 'Not Verified' ? 'selected' : ''}`}
-                                        onClick={() => handleRowStatusChange(rowIndex, 'Not Verified')}
-                                    >
-                                        Not Verified
-                                    </button>
-                                </div>
-                                {validationErrors[`row-${rowIndex}-status`] && (
-                                    <div className="field-error">{validationErrors[`row-${rowIndex}-status`]}</div>
-                                )}
-                            </div>
+                            {/* Status Buttons - Only show if document exists */}
+                            {row.documentProofUrl && row.documentProofUrl.trim() !== '' && (
+                                <>
+                                    <div className="field-group">
+                                        <label className="field-label">Verification Status:</label>
+                                        <div className="status-buttons">
+                                            <button
+                                                className={`status-btn approve ${row.status === 'Approve' ? 'selected' : ''}`}
+                                                onClick={() => handleRowStatusChange(rowIndex, 'Approve')}
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                className={`status-btn reject ${row.status === 'Reject' ? 'selected' : ''}`}
+                                                onClick={() => handleRowStatusChange(rowIndex, 'Reject')}
+                                            >
+                                                Reject
+                                            </button>
+                                            <button
+                                                className={`status-btn not-clear ${row.status === 'Not Clear' ? 'selected' : ''}`}
+                                                onClick={() => handleRowStatusChange(rowIndex, 'Not Clear')}
+                                            >
+                                                Not Clear
+                                            </button>
+                                            <button
+                                                className={`status-btn not-verified ${row.status === 'Not Verified' ? 'selected' : ''}`}
+                                                onClick={() => handleRowStatusChange(rowIndex, 'Not Verified')}
+                                            >
+                                                Not Verified
+                                            </button>
+                                        </div>
+                                        {validationErrors[`row-${rowIndex}-status`] && (
+                                            <div className="field-error">{validationErrors[`row-${rowIndex}-status`]}</div>
+                                        )}
+                                    </div>
 
-                            {/* Status Reason (conditional) */}
-                            {(row.status === 'Reject' || row.status === 'Not Clear' || row.statusReason) && (
-                                <div className="field-group">
-                                    <label className="field-label">
-                                        Reason {(row.status === 'Reject' || row.status === 'Not Clear') && <span className="required">*</span>}:
-                                    </label>
-                                    <textarea
-                                        value={row.statusReason}
-                                        onChange={(e) => handleRowFieldChange(rowIndex, 'statusReason', e.target.value)}
-                                        className="reason-textarea"
-                                        rows="2"
-                                        placeholder="Enter reason (minimum 10 characters)"
-                                    />
-                                    {validationErrors[`row-${rowIndex}-statusReason`] && (
-                                        <div className="field-error">{validationErrors[`row-${rowIndex}-statusReason`]}</div>
+                                    {/* Status Reason (conditional) */}
+                                    {(row.status === 'Reject' || row.status === 'Not Clear' || row.statusReason) && (
+                                        <div className="field-group">
+                                            <label className="field-label">
+                                                Reason {(row.status === 'Reject' || row.status === 'Not Clear') && <span className="required">*</span>}:
+                                            </label>
+                                            <textarea
+                                                value={row.statusReason}
+                                                onChange={(e) => handleRowFieldChange(rowIndex, 'statusReason', e.target.value)}
+                                                className="reason-textarea"
+                                                rows="2"
+                                                placeholder="Enter reason (minimum 10 characters)"
+                                            />
+                                            {validationErrors[`row-${rowIndex}-statusReason`] && (
+                                                <div className="field-error">{validationErrors[`row-${rowIndex}-statusReason`]}</div>
+                                            )}
+                                        </div>
                                     )}
-                                </div>
+                                </>
                             )}
                         </div>
                     ))}
@@ -373,10 +392,11 @@ const ApplicantDetail = () => {
 
                     <div className="overall-status-buttons">
                         <button
-                            className={`overall-btn fully-verified ${formData.overallStatus === 'Fully Verified' ? 'selected' : ''}`}
-                            onClick={() => handleOverallStatusChange('Fully Verified')}
+                            className={`overall-btn fully-verified ${formData.overallStatus === 'Fully Verified' ? 'selected' : ''} disabled`}
+                            disabled
+                            title="Auto-selected when all documents are approved"
                         >
-                            Fully Verified
+                            Fully Verified (Auto)
                         </button>
                         <button
                             className={`overall-btn reject-candidate ${formData.overallStatus === 'Reject Candidate' ? 'selected' : ''}`}
@@ -436,23 +456,36 @@ const ApplicantDetail = () => {
                     )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="action-buttons">
-                    <button
-                        className="secondary-btn"
-                        onClick={() => navigate(`/zp-staff/${applicationId}/applicants`)}
-                        disabled={submitting}
-                    >
-                        Go to Applicant List Page
-                    </button>
+                {/* Action Section with Validation Errors */}
+                <div className="action-section">
+                    {Object.keys(validationErrors).length > 0 && (
+                        <div className="validation-error-popup">
+                            <strong>⚠️ Please fix the following errors:</strong>
+                            <ul>
+                                {Object.values(validationErrors).map((error, index) => (
+                                    <li key={index}>{error}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
-                    <button
-                        className="primary-btn"
-                        onClick={handleSubmit}
-                        disabled={submitting}
-                    >
-                        {submitting ? 'Submitting...' : 'Submit Verification'}
-                    </button>
+                    <div className="action-buttons">
+                        <button
+                            className="secondary-btn"
+                            onClick={() => navigate(`/zp-staff/${applicationId}/applicants`)}
+                            disabled={submitting}
+                        >
+                            Go to Applicant List Page
+                        </button>
+
+                        <button
+                            className="primary-btn"
+                            onClick={handleSubmit}
+                            disabled={submitting}
+                        >
+                            {submitting ? 'Submitting...' : 'Submit Verification'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Disclaimer Modal */}

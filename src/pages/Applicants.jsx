@@ -197,6 +197,7 @@ const Applicants = () => {
                             <option value="verified">Verified</option>
                             <option value="rejected">Rejected</option>
                             <option value="pending">Pending</option>
+                            <option value="rectification">Rectification</option>
                         </select>
                     </div>
 
