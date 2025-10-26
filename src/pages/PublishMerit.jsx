@@ -159,7 +159,8 @@ const PublishMerit = () => {
             const response = await fetch('https://api.pranvidyatech.in/upload', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'X-Bucket-Name': 'public'
                 },
                 body: formData
             })
@@ -315,7 +316,7 @@ const PublishMerit = () => {
                             <input
                                 type="file"
                                 id="meritListFile"
-                                onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'meritList')}
+                                onChange={(e) => handleFileUpload(e.target.files[0], 'meritList')}
                                 accept=".pdf,.doc,.docx"
                                 disabled={uploadingMeritList || meritListAsset}
                                 className="file-input"
@@ -396,7 +397,7 @@ const PublishMerit = () => {
                                                     <input
                                                         type="file"
                                                         id={`letter-${candidate.id}`}
-                                                        onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'letter', candidate.id)}
+                                                        onChange={(e) => handleFileUpload(e.target.files[0], 'letter', candidate.id)}
                                                         accept=".pdf"
                                                         disabled={uploadingLetter[candidate.id] || letterAssets[candidate.id]}
                                                         className="file-input-hidden"
