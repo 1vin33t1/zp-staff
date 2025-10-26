@@ -8,6 +8,8 @@ import ViewApplication from './pages/ViewApplication'
 import Profile from './pages/Profile'
 import Applicants from './pages/Applicants'
 import EditApplication from './pages/EditApplication'
+import ApplicantDetail from './pages/ApplicantDetail'
+import PublishMerit from './pages/PublishMerit'
 import './App.css'
 
 function App() {
@@ -225,6 +227,25 @@ function App() {
                                 <Navigate to="/zp-staff" replace />
                         }
                     />
+
+                    <Route
+                        path="/zp-staff/:applicationId/applicants/:applicantId"
+                        element={
+                            isAuthenticated ?
+                                <ApplicantDetail /> :
+                                <Navigate to="/zp-staff" replace />
+                        }
+                    />
+
+                    <Route
+                        path="/zp-staff/:applicationId/publish-merit"
+                        element={
+                            isAuthenticated ?
+                                <PublishMerit /> :
+                                <Navigate to="/zp-staff" replace />
+                        }
+                    />
+
                     <Route path="/" element={<Navigate to="/zp-staff" replace />} />
                 </Routes>
             </main>
