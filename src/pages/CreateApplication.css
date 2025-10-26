@@ -229,3 +229,10 @@
         flex-direction: column;
     }
 }
+
+.field-hint {
+    font-size: 0.8rem;
+    color: #f59e0b;
+    font-style: italic;
+    margin-top: 0.25rem;
+}

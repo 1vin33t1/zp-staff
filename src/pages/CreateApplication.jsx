@@ -25,6 +25,7 @@ const CreateApplication = () => {
     const [uploadingDescription, setUploadingDescription] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
+    const [dateError, setDateError] = useState('')
     const [showDisclaimer, setShowDisclaimer] = useState(false)
     const [submitSuccess, setSubmitSuccess] = useState(false)
 
@@ -67,6 +68,44 @@ const CreateApplication = () => {
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }))
         setError('')
+        setDateError('')
+    }
+
+    // Date validation function
+    const validateDates = () => {
+        const { startDate, endDate, rectificationStartDate, rectificationEndDate } = formData
+
+        // Check if End Date > Start Date
+        if (startDate && endDate) {
+            if (new Date(endDate) <= new Date(startDate)) {
+                setDateError('End Date must be greater than Start Date')
+                return false
+            }
+        }
+
+        // Check if Rectification Start Date > End Date
+        if (endDate && rectificationStartDate) {
+            if (new Date(rectificationStartDate) <= new Date(endDate)) {
+                setDateError('Rectification Start Date must be greater than End Date')
+                return false
+            }
+        }
+
+        // Check if Rectification End Date > Rectification Start Date
+        if (rectificationStartDate && rectificationEndDate) {
+            if (new Date(rectificationEndDate) <= new Date(rectificationStartDate)) {
+                setDateError('Rectification End Date must be greater than Rectification Start Date')
+                return false
+            }
+        }
+
+        // If Rectification Start Date is present, Rectification End Date is required
+        if (rectificationStartDate && !rectificationEndDate) {
+            setDateError('Rectification End Date is required when Rectification Start Date is provided')
+            return false
+        }
+
+        return true
     }
 
     const handleFileUpload = async (field, file) => {
@@ -83,7 +122,8 @@ const CreateApplication = () => {
             const response = await fetch('https://api.pranvidyatech.in/upload', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'X-Bucket-Name': 'public'
                 },
                 body: formDataUpload
             })
@@ -130,6 +170,12 @@ const CreateApplication = () => {
             setError('Please fill all mandatory fields before submitting')
             return
         }
+
+        // Validate dates
+        if (!validateDates()) {
+            return
+        }
+
         setShowDisclaimer(true)
     }
 
@@ -194,6 +240,7 @@ const CreateApplication = () => {
                 )}
 
                 {error && <div className="error-message">{error}</div>}
+                {dateError && <div className="error-message">{dateError}</div>}
 
                 <div className="form-container">
                     {/* Name */}
@@ -283,7 +330,7 @@ const CreateApplication = () => {
                             id="endDate"
                             type="date"
                             value={formData.endDate}
-                            min={getTodayDate()}
+                            min={formData.startDate || getTodayDate()}
                             onChange={(e) => handleInputChange('endDate', e.target.value)}
                             disabled={submitting}
                         />
@@ -291,12 +338,15 @@ const CreateApplication = () => {
 
                     {/* Rectification Start Date */}
                     <div className="form-field">
-                        <label htmlFor="rectificationStartDate">Rectification Start Date</label>
+                        <label htmlFor="rectificationStartDate">
+                            Rectification Start Date
+                            {formData.rectificationStartDate && <span className="required">*</span>}
+                        </label>
                         <input
                             id="rectificationStartDate"
                             type="date"
                             value={formData.rectificationStartDate}
-                            min={getTodayDate()}
+                            min={formData.endDate || getTodayDate()}
                             onChange={(e) => handleInputChange('rectificationStartDate', e.target.value)}
                             disabled={submitting}
                         />
@@ -304,15 +354,21 @@ const CreateApplication = () => {
 
                     {/* Rectification End Date */}
                     <div className="form-field">
-                        <label htmlFor="rectificationEndDate">Rectification End Date</label>
+                        <label htmlFor="rectificationEndDate">
+                            Rectification End Date
+                            {formData.rectificationStartDate && <span className="required">*</span>}
+                        </label>
                         <input
                             id="rectificationEndDate"
                             type="date"
                             value={formData.rectificationEndDate}
-                            min={getTodayDate()}
+                            min={formData.rectificationStartDate || getTodayDate()}
                             onChange={(e) => handleInputChange('rectificationEndDate', e.target.value)}
-                            disabled={submitting}
+                            disabled={submitting || !formData.rectificationStartDate}
                         />
+                        {formData.rectificationStartDate && !formData.rectificationEndDate && (
+                            <span className="field-hint">Required when Rectification Start Date is provided</span>
+                        )}
                     </div>
 
                     {/* Publish Checkbox */}
