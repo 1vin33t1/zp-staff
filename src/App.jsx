@@ -10,6 +10,7 @@ import Applicants from './pages/Applicants'
 import EditApplication from './pages/EditApplication'
 import ApplicantDetail from './pages/ApplicantDetail'
 import PublishMerit from './pages/PublishMerit'
+import ApplicantHistory from './pages/ApplicantHistory'
 import './App.css'
 
 function App() {
@@ -245,6 +246,16 @@ function App() {
                                 <Navigate to="/zp-staff" replace />
                         }
                     />
+
+                    <Route
+                        path="/zp-staff/:applicationId/applicants/:applicantId/history"
+                        element={
+                            isAuthenticated ?
+                                <ApplicantHistory /> :
+                                <Navigate to="/zp-staff" replace />
+                        }
+                    />
+
 
                     <Route path="/" element={<Navigate to="/zp-staff" replace />} />
                 </Routes>

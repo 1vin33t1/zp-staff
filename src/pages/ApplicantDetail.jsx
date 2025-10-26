@@ -199,7 +199,7 @@ const ApplicantDetail = () => {
                 setSubmitSuccess(true)
                 setTimeout(() => {
                     navigate(`/zp-staff/${applicationId}/applicants`)
-                }, 5000)
+                }, 3000)
             } else {
                 throw new Error('Submission failed')
             }
@@ -286,6 +286,14 @@ const ApplicantDetail = () => {
                     <div className="header-right">
                         <h2>Applicant ID</h2>
                         <p className="applicant-id">{formData.userId}</p>
+                    </div>
+                    <div className="header-actions">
+                        <button
+                            className="history-btn"
+                            onClick={() => navigate(`/zp-staff/${applicationId}/applicants/${applicantId}/history`)}
+                        >
+                            📜 History
+                        </button>
                     </div>
                 </div>
 
