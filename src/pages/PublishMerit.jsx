@@ -318,14 +318,14 @@ const PublishMerit = () => {
                                 id="meritListFile"
                                 onChange={(e) => handleFileUpload(e.target.files[0], 'meritList')}
                                 accept=".pdf,.doc,.docx"
-                                disabled={uploadingMeritList || meritListAsset}
+                                disabled={uploadingMeritList}
                                 className="file-input"
                             />
                             <label htmlFor="meritListFile" className={`upload-label ${meritListAsset ? 'uploaded' : ''}`}>
                                 {uploadingMeritList ? (
                                     <span>⏳ Uploading...</span>
                                 ) : meritListAsset ? (
-                                    <span>✓ Uploaded: {meritListAsset}</span>
+                                    <span>✓ Uploaded: {meritListAsset} (Click to change)</span>
                                 ) : (
                                     <span>📄 Click to Upload Merit List</span>
                                 )}
@@ -399,14 +399,14 @@ const PublishMerit = () => {
                                                         id={`letter-${candidate.id}`}
                                                         onChange={(e) => handleFileUpload(e.target.files[0], 'letter', candidate.id)}
                                                         accept=".pdf"
-                                                        disabled={uploadingLetter[candidate.id] || letterAssets[candidate.id]}
+                                                        disabled={uploadingLetter[candidate.id]}
                                                         className="file-input-hidden"
                                                     />
                                                     <label htmlFor={`letter-${candidate.id}`} className={`upload-letter-btn ${letterAssets[candidate.id] ? 'uploaded' : ''}`}>
                                                         {uploadingLetter[candidate.id] ? (
                                                             'Uploading...'
                                                         ) : letterAssets[candidate.id] ? (
-                                                            '✓ Uploaded'
+                                                            '🔄 Change'
                                                         ) : (
                                                             '📤 Upload'
                                                         )}

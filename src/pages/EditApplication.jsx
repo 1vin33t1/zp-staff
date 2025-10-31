@@ -90,10 +90,10 @@ const EditApplication = () => {
                     region: appData.region || '',
                     banner: appData.banner || '',
                     description: appData.description || '',
-                    startDate: appData.startDate || '',
-                    endDate: appData.endDate || '',
-                    rectificationStartDate: appData.rectificationStartDate || '',
-                    rectificationEndDate: appData.rectificationEndDate || '',
+                    startDate: convertDateToInput(appData.startDate) || '',
+                    endDate: convertDateToInput(appData.endDate) || '',
+                    rectificationStartDate: convertDateToInput(appData.rectificationStartDate) || '',
+                    rectificationEndDate: convertDateToInput(appData.rectificationEndDate) || '',
                     publish: appData.publish || false
                 })
             } else {
@@ -191,6 +191,35 @@ const EditApplication = () => {
         return `${year}-${month}-${day}`
     }
 
+    const getDateMinus60Days = () => {
+        const today = new Date();
+        today.setDate(today.getDate() - 60); // subtract 60 days
+
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    };
+
+    const convertDateToInput = (dateStr) => {
+        if (!dateStr) return ''
+        const parts = dateStr.split('-')
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}` // DD-MM-YYYY
+        }
+        return dateStr
+    }
+
+    const convertDateToAPI = (dateStr) => {
+        if (!dateStr) return ''
+        const parts = dateStr.split('-')
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}` // DD-MM-YYYY
+        }
+        return dateStr
+    }
+
     const isMandatoryFieldsFilled = () => {
         return formData.name.trim() !== '' &&
             formData.region !== '' &&
@@ -227,10 +256,10 @@ const EditApplication = () => {
             region: formData.region,
             banner: formData.banner,
             description: formData.description,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            rectificationStartDate: formData.rectificationStartDate || '',
-            rectificationEndDate: formData.rectificationEndDate || '',
+            startDate: convertDateToAPI(formData.startDate),
+            endDate: convertDateToAPI(formData.endDate),
+            rectificationStartDate: convertDateToAPI(formData.rectificationStartDate) || '',
+            rectificationEndDate: convertDateToAPI(formData.rectificationEndDate) || '',
             publish: formData.publish
         }
 
@@ -326,36 +355,48 @@ const EditApplication = () => {
                     </div>
 
                     {/* Banner */}
-                    <div className="form-field">
-                        <label htmlFor="banner">Banner <span className="required">*</span></label>
-                        <div className="upload-field">
+                    <div className="form-group">
+                        <label className="form-label">
+                            Banner <span className="required">*</span>
+                        </label>
+                        <div className="upload-section">
                             <input
-                                id="banner"
                                 type="file"
-                                onChange={(e) => handleFileUpload('banner', e.target.files[0])}
+                                id="bannerFile"
+                                onChange={(e) => handleFileUpload('banner',e.target.files[0])}
                                 accept="image/*"
-                                disabled={uploadingBanner || submitting}
-                                className="file-input"
+                                disabled={uploadingBanner}
+                                className="file-input-hidden"
                             />
-                            {uploadingBanner && <span className="upload-status">Uploading...</span>}
-                            {formData.banner && <span className="upload-status success">✓ {formData.banner}</span>}
+                            <label htmlFor="bannerFile" className={`upload-btn ${formData.banner ? 'uploaded' : ''}`}>
+                                {uploadingBanner ? '⏳ Uploading...' : formData.banner ? '✓ Uploaded' : '📤 Upload Banner'}
+                            </label>
+                            {formData.banner && (
+                                <div className="upload-filename">{formData.banner}</div>
+                            )}
                         </div>
                     </div>
 
                     {/* Description */}
-                    <div className="form-field">
-                        <label htmlFor="description">Description <span className="required">*</span></label>
-                        <div className="upload-field">
+                    <div className="form-group">
+                        <label className="form-label">
+                            Description <span className="required">*</span>
+                        </label>
+                        <div className="upload-section">
                             <input
-                                id="description"
                                 type="file"
+                                id="descriptionFile"
                                 onChange={(e) => handleFileUpload('description', e.target.files[0])}
-                                accept=".pdf,.doc,.docx"
-                                disabled={uploadingDescription || submitting}
-                                className="file-input"
+                                accept=".pdf"
+                                disabled={uploadingDescription}
+                                className="file-input-hidden"
                             />
-                            {uploadingDescription && <span className="upload-status">Uploading...</span>}
-                            {formData.description && <span className="upload-status success">✓ {formData.description}</span>}
+                            <label htmlFor="descriptionFile" className={`upload-btn ${formData.description ? 'uploaded' : ''}`}>
+                                {uploadingDescription ? '⏳ Uploading...' : formData.description ? '✓ Uploaded' : '📤 Upload Description'}
+                            </label>
+                            {formData.description && (
+                                <div className="upload-filename">{formData.description}</div>
+                            )}
                         </div>
                     </div>
 
@@ -366,7 +407,7 @@ const EditApplication = () => {
                             id="startDate"
                             type="date"
                             value={formData.startDate}
-                            min={getTodayDate()}
+                            min={getDateMinus60Days()}
                             onChange={(e) => handleInputChange('startDate', e.target.value)}
                             disabled={submitting}
                         />
