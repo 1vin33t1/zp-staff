@@ -39,7 +39,7 @@ const CreateApplication = () => {
         const token = localStorage.getItem('accessToken')
 
         try {
-            const response = await fetch('https://api.pranvidyatech.in/zp-staff/eligible-region', {
+            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligible-region', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -119,7 +119,7 @@ const CreateApplication = () => {
             const formDataUpload = new FormData()
             formDataUpload.append('file', file)
 
-            const response = await fetch('https://api.pranvidyatech.in/upload', {
+            const response = await fetch('https://api.gramsamruddhi.in/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -210,7 +210,7 @@ const CreateApplication = () => {
         }
 
         try {
-            const response = await fetch('https://api.pranvidyatech.in/zp-staff/create-application', {
+            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/create-application', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

@@ -41,7 +41,7 @@ function App() {
                 const token = localStorage.getItem('accessToken')
                 const blob = new Blob([JSON.stringify({})], { type: 'application/json' })
                 navigator.sendBeacon(
-                    'https://api.pranvidyatech.in/auth/logout/zp-staff',
+                    'https://api.gramsamruddhi.in/auth/logout/zp-staff',
                     blob
                 )
 
@@ -94,7 +94,7 @@ function App() {
     const startTokenRefresh = () => {
         const refreshToken = async () => {
             try {
-                const response = await fetch('https://api.pranvidyatech.in/auth/refresh/zp-staff', {
+                const response = await fetch('https://api.gramsamruddhi.in/auth/refresh/zp-staff', {
                     method: 'POST',
                     credentials: 'include'
                 })
@@ -134,7 +134,7 @@ function App() {
     const handleLogout = async (callApi = true) => {
         if (callApi) {
             try {
-                await fetch('https://api.pranvidyatech.in/auth/logout/zp-staff', {
+                await fetch('https://api.gramsamruddhi.in/auth/logout/zp-staff', {
                     method: 'POST',
                     credentials: 'include'
                 })

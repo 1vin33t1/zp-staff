@@ -49,7 +49,7 @@ const LoginPage = ({ onLogin }) => {
         setEmailError('')
 
         try {
-            const response = await fetch(`https://api.pranvidyatech.in/auth/send-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}`, {
+            const response = await fetch(`https://api.gramsamruddhi.in/auth/send-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}`, {
                 method: 'POST'
             })
 
@@ -85,7 +85,7 @@ const LoginPage = ({ onLogin }) => {
         setError('')
 
         try {
-            const response = await fetch(`https://api.pranvidyatech.in/auth/verify-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}&otp=${otpValue}`, {
+            const response = await fetch(`https://api.gramsamruddhi.in/auth/verify-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}&otp=${otpValue}`, {
                 method: 'POST',
                 credentials: 'include'
             })

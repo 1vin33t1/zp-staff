@@ -31,7 +31,7 @@ const ApplicantDetail = () => {
 
         try {
             const response = await fetch(
-                `https://api.pranvidyatech.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
+                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
                 {
                     method: 'GET',
                     headers: {
@@ -182,7 +182,7 @@ const ApplicantDetail = () => {
 
         try {
             const response = await fetch(
-                `https://api.pranvidyatech.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
+                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
                 {
                     method: 'PUT',
                     headers: {

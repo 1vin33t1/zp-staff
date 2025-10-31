@@ -37,7 +37,7 @@ const Applicants = () => {
         const token = localStorage.getItem('accessToken')
 
         try {
-            const response = await fetch(`https://api.pranvidyatech.in/zp-staff/${applicationId}/applicants`, {
+            const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`

@@ -39,7 +39,7 @@ const PublishMerit = () => {
 
         try {
             const response = await fetch(
-                `https://api.pranvidyatech.in/zp-staff/${applicationId}/eligible-candidates`,
+                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/eligible-candidates`,
                 {
                     method: 'GET',
                     headers: {
@@ -156,7 +156,7 @@ const PublishMerit = () => {
             const formData = new FormData()
             formData.append('file', file)
 
-            const response = await fetch('https://api.pranvidyatech.in/upload', {
+            const response = await fetch('https://api.gramsamruddhi.in/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -227,7 +227,7 @@ const PublishMerit = () => {
 
         try {
             const response = await fetch(
-                `https://api.pranvidyatech.in/zp-staff/${applicationId}/publish-merit-list`,
+                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/publish-merit-list`,
                 {
                     method: 'POST',
                     headers: {

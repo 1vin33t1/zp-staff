@@ -11,7 +11,7 @@ export default defineConfig({
         proxy: {
             // Proxy all /auth requests to your API server
             '/auth': {
-                target: 'https://api.pranvidyatech.in',
+                target: 'https://api.gramsamruddhi.in',
                 changeOrigin: true,
                 secure: true,
                 credentials: 'include',

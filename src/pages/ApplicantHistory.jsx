@@ -26,7 +26,7 @@ const ApplicantHistory = () => {
 
         try {
             const response = await fetch(
-                `https://api.pranvidyatech.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
+                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
                 {
                     method: 'GET',
                     headers: {
