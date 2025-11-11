@@ -26,6 +26,11 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
 
     const getDisplayEmail = () => {
         if (!userEmail) return ''
+        const storedData = localStorage.getItem("userInfo");
+        if (storedData) {
+            const userData = JSON.parse(storedData);
+            return userData.name ? userData.name : userEmail.split('@')[0];
+        }
         return userEmail.split('@')[0]
     }
 

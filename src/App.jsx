@@ -5,7 +5,7 @@ import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import CreateApplication from './pages/CreateApplication'
 import ViewApplication from './pages/ViewApplication'
-import Profile from './pages/Profile'
+import Profile from './pages/StaffProfile.jsx'
 import Applicants from './pages/Applicants'
 import EditApplication from './pages/EditApplication'
 import ApplicantDetail from './pages/ApplicantDetail'
@@ -103,6 +103,9 @@ function App() {
 
                 if (data.accessToken) {
                     localStorage.setItem('accessToken', data.accessToken)
+                    localStorage.setItem('userEmail', data.email)
+                    if (data.meta)
+                        localStorage.setItem("userInfo", JSON.stringify(data.meta));
                 } else {
                     handleLogout(false)
                 }
@@ -145,6 +148,7 @@ function App() {
 
         localStorage.removeItem('accessToken')
         localStorage.removeItem('userEmail')
+        localStorage.removeItem("userInfo")
         setIsAuthenticated(false)
         setUserEmail(null)
 

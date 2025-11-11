@@ -107,3 +107,37 @@ input:focus, select:focus {
     margin: 0.5rem 0;
     font-size: 0.875rem;
 }
+
+.resume-photo {
+    flex-shrink: 0;
+    width: 120px;
+    height: 140px;
+    border: 2px solid rgba(94, 82, 64, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(245, 245, 245, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.resume-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 768px) {
+    .resume-photo {
+        align-self: center;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .resume-photo {
+        width: 100px;
+        height: 120px;
+    }
+}

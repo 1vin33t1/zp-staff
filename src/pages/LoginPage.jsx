@@ -93,6 +93,8 @@ const LoginPage = ({ onLogin }) => {
             const data = await response.json()
 
             if (data.verified) {
+                if (data.meta)
+                    localStorage.setItem("userInfo", JSON.stringify(data.meta));
                 onLogin(email, data.accessToken)
             } else {
                 setError(data.failureReason || 'Invalid OTP')

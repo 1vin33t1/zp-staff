@@ -233,7 +233,13 @@ const ApplicantDetail = () => {
                     {value === 'Yes' ? '✓ Yes' : '✗ No'}
                 </div>
             )
-        } else {
+        } else if(valueType === 'image') {
+            return (
+                <div className="resume-photo">
+                    <img src={value} alt="profile photo" />
+                </div>
+            )
+        }else {
             return <div className="field-display">{value}</div>
         }
     }
@@ -316,6 +322,22 @@ const ApplicantDetail = () => {
                                 <div className="field-group">
                                     <label className="field-label">{row.key2}:</label>
                                     {renderFieldInput(row, rowIndex, 2)}
+                                </div>
+                            )}
+
+                            {/* Field 3 (if exists) */}
+                            {row.key3 && (
+                                <div className="field-group">
+                                    <label className="field-label">{row.key3}:</label>
+                                    {renderFieldInput(row, rowIndex, 3)}
+                                </div>
+                            )}
+
+                            {/* Field 4 (if exists) */}
+                            {row.key4 && (
+                                <div className="field-group">
+                                    <label className="field-label">{row.key4}:</label>
+                                    {renderFieldInput(row, rowIndex, 4)}
                                 </div>
                             )}
 
