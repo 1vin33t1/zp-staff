@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import {Navigate, Route, Routes, useNavigate} from 'react-router-dom'
+import {useEffect, useRef, useState} from 'react'
 import TopBar from './components/TopBar'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
@@ -27,6 +27,19 @@ function App() {
         const email = localStorage.getItem('userEmail')
         if (token && email) {
             setIsAuthenticated(true)
+            const lastActivityString = localStorage.getItem('lastActivity');
+            if (!lastActivityString) {
+                handleLogout(true)
+                return true
+            } else {
+                const currentTime = new Date();
+                const fifteenMinutesAgo = new Date(currentTime.getTime() - 15 * 60 * 1000);
+                const lastActivityDate = new Date(lastActivityString);
+                if (lastActivityDate < fifteenMinutesAgo) {
+                    handleLogout(true)
+                    return true
+                }
+            }
             setUserEmail(email)
             startActivityMonitoring()
             startTokenRefresh()
@@ -39,7 +52,7 @@ function App() {
             if (isAuthenticated) {
                 // Call logout API synchronously using sendBeacon
                 const token = localStorage.getItem('accessToken')
-                const blob = new Blob([JSON.stringify({})], { type: 'application/json' })
+                const blob = new Blob([JSON.stringify({})], {type: 'application/json'})
                 navigator.sendBeacon(
                     'https://api.gramsamruddhi.in/auth/logout/zp-staff',
                     blob
@@ -47,6 +60,7 @@ function App() {
 
                 // Clear storage
                 localStorage.removeItem('accessToken')
+                localStorage.removeItem('lastActivity')
                 localStorage.removeItem('userEmail')
             }
         }
@@ -60,7 +74,8 @@ function App() {
 
     // Monitor user activity
     const resetActivityTimer = () => {
-        lastActivityRef.current = Date.now()
+        // Retrieve the last activity time from localStorage
+        localStorage.setItem('lastActivity', new Date().toISOString());
 
         if (inactivityTimerRef.current) {
             clearTimeout(inactivityTimerRef.current)
@@ -102,6 +117,7 @@ function App() {
                 const data = await response.json()
 
                 if (data.accessToken) {
+                    localStorage.setItem('lastActivity', new Date().toISOString());
                     localStorage.setItem('accessToken', data.accessToken)
                     localStorage.setItem('userEmail', data.email)
                     if (data.meta)
@@ -145,7 +161,7 @@ function App() {
                 console.error('Logout API error:', error)
             }
         }
-
+        localStorage.removeItem('lastActivity');
         localStorage.removeItem('accessToken')
         localStorage.removeItem('userEmail')
         localStorage.removeItem("userInfo")
@@ -163,7 +179,14 @@ function App() {
     }
 
     const getInactivityTime = () => {
-        return Date.now() - lastActivityRef.current
+        const lastActivityString = localStorage.getItem('lastActivity');
+        if (isAuthenticated && !lastActivityString) {
+            handleLogout(true)
+            return true
+        }
+        const lastActivityDate = new Date(lastActivityString);
+
+        return Date.now() - lastActivityDate
     }
 
     return (
@@ -180,56 +203,56 @@ function App() {
                         path="/zp-staff"
                         element={
                             isAuthenticated ?
-                                <Navigate to="/zp-staff/dashboard" replace /> :
-                                <LoginPage onLogin={handleLogin} />
+                                <Navigate to="/zp-staff/dashboard" replace/> :
+                                <LoginPage onLogin={handleLogin}/>
                         }
                     />
                     <Route
                         path="/zp-staff/dashboard"
                         element={
                             isAuthenticated ?
-                                <Dashboard /> :
-                                <Navigate to="/zp-staff" replace />
+                                <Dashboard/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
                     <Route
                         path="/zp-staff/create-application"
                         element={
                             isAuthenticated ?
-                                <CreateApplication /> :
-                                <Navigate to="/zp-staff" replace />
+                                <CreateApplication/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
                     <Route
                         path="/zp-staff/view-application"
                         element={
                             isAuthenticated ?
-                                <ViewApplication /> :
-                                <Navigate to="/zp-staff" replace />
+                                <ViewApplication/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
                     <Route
                         path="/zp-staff/profile"
                         element={
                             isAuthenticated ?
-                                <Profile /> :
-                                <Navigate to="/zp-staff" replace />
+                                <Profile/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
                     <Route
                         path="/zp-staff/:applicationId/applicants"
                         element={
                             isAuthenticated ?
-                                <Applicants /> :
-                                <Navigate to="/zp-staff" replace />
+                                <Applicants/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
                     <Route
                         path="/zp-staff/:applicationId/edit"
                         element={
                             isAuthenticated ?
-                                <EditApplication /> :
-                                <Navigate to="/zp-staff" replace />
+                                <EditApplication/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
 
@@ -237,8 +260,8 @@ function App() {
                         path="/zp-staff/:applicationId/applicants/:applicantId"
                         element={
                             isAuthenticated ?
-                                <ApplicantDetail /> :
-                                <Navigate to="/zp-staff" replace />
+                                <ApplicantDetail/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
 
@@ -246,8 +269,8 @@ function App() {
                         path="/zp-staff/:applicationId/publish-merit"
                         element={
                             isAuthenticated ?
-                                <PublishMerit /> :
-                                <Navigate to="/zp-staff" replace />
+                                <PublishMerit/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
 
@@ -255,13 +278,13 @@ function App() {
                         path="/zp-staff/:applicationId/applicants/:applicantId/history"
                         element={
                             isAuthenticated ?
-                                <ApplicantHistory /> :
-                                <Navigate to="/zp-staff" replace />
+                                <ApplicantHistory/> :
+                                <Navigate to="/zp-staff" replace/>
                         }
                     />
 
 
-                    <Route path="/" element={<Navigate to="/zp-staff" replace />} />
+                    <Route path="/" element={<Navigate to="/zp-staff" replace/>}/>
                 </Routes>
             </main>
         </div>
