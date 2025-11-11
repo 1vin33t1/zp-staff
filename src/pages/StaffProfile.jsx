@@ -40,11 +40,13 @@ const StaffProfile = () => {
             })
 
             const data = await response.json()
+            const storedData = localStorage.getItem("userInfo");
+            const userData = JSON.parse(storedData);
 
             if (data.result && data.data) {
                 setProfileData({
-                    name: data.data.name || '',
-                    region: Array.isArray(data.data.region) ? data.data.region : [],
+                    name: userData.name || '',
+                    region: Array.isArray(userData.region) ? userData.region : [],
                     currentRegion: data.data.currentRegion || '',
                     phoneCode: data.data.phoneCode || '+91',
                     mobile: data.data.mobile || ''

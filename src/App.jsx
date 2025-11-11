@@ -19,9 +19,7 @@ function App() {
     const navigate = useNavigate()
     const inactivityTimerRef = useRef(null)
     const refreshTimerRef = useRef(null)
-    const lastActivityRef = useRef(Date.now())
 
-    // Check authentication on mount - KEEP USER LOGGED IN ON REFRESH
     useEffect(() => {
         const token = localStorage.getItem('accessToken')
         const email = localStorage.getItem('userEmail')
@@ -46,31 +44,43 @@ function App() {
         }
     }, [])
 
-    // Auto-logout ONLY on tab/browser close (not on refresh)
     useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            // Mark that a refresh is happening
+            sessionStorage.setItem("isRefresh", "true");
+        };
+
         const handleUnload = () => {
-            if (isAuthenticated) {
-                // Call logout API synchronously using sendBeacon
-                const token = localStorage.getItem('accessToken')
-                const blob = new Blob([JSON.stringify({})], {type: 'application/json'})
+            const isRefresh = sessionStorage.getItem("isRefresh");
+
+            // If not a refresh → tab/browser closed
+            if (!isRefresh && isAuthenticated) {
+                const token = localStorage.getItem("accessToken");
+                const blob = new Blob([JSON.stringify({})], { type: "application/json" });
                 navigator.sendBeacon(
-                    'https://api.gramsamruddhi.in/auth/logout/zp-staff',
+                    "https://api.gramsamruddhi.in/auth/logout/zp-staff",
                     blob
-                )
+                );
 
-                // Clear storage
-                localStorage.removeItem('accessToken')
-                localStorage.removeItem('lastActivity')
-                localStorage.removeItem('userEmail')
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("userEmail");
+                localStorage.removeItem("userInfo");
+                localStorage.removeItem('lastActivity');
             }
-        }
 
-        window.addEventListener('unload', handleUnload)
+            // Always clear refresh marker
+            sessionStorage.removeItem("isRefresh");
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("unload", handleUnload);
 
         return () => {
-            window.removeEventListener('unload', handleUnload)
-        }
-    }, [isAuthenticated])
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("unload", handleUnload);
+        };
+    }, [isAuthenticated]);
+
 
     // Monitor user activity
     const resetActivityTimer = () => {
@@ -119,7 +129,7 @@ function App() {
                 if (data.accessToken) {
                     localStorage.setItem('lastActivity', new Date().toISOString());
                     localStorage.setItem('accessToken', data.accessToken)
-                    localStorage.setItem('userEmail', data.email)
+                    localStorage.setItem('userEmail', data.user)
                     if (data.meta)
                         localStorage.setItem("userInfo", JSON.stringify(data.meta));
                 } else {
