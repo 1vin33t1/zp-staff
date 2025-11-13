@@ -60,7 +60,6 @@ const EditApplication = () => {
             }
         } catch (err) {
             if (retryCount < maxRetries - 1) {
-                console.log(`Retrying region fetch... Attempt ${retryCount + 2}`)
                 setTimeout(() => fetchRegions(retryCount + 1), 1000)
             } else {
                 setError('Failed to load regions after 3 attempts.')

@@ -8,6 +8,7 @@ const CreateApplication = () => {
     // Form state
     const [formData, setFormData] = useState({
         name: '',
+        localLanguage: '',
         region: '',
         banner: '',
         description: '',
@@ -56,7 +57,6 @@ const CreateApplication = () => {
             }
         } catch (err) {
             if (retryCount < maxRetries - 1) {
-                console.log(`Retrying region fetch... Attempt ${retryCount + 2}`)
                 setTimeout(() => fetchRegions(retryCount + 1), 1000)
             } else {
                 setError('Failed to load regions after 3 attempts. Please refresh the page.')
@@ -169,6 +169,7 @@ const CreateApplication = () => {
 
     const isMandatoryFieldsFilled = () => {
         return formData.name.trim() !== '' &&
+            formData.localLanguage.trim() !== '' &&
             formData.region !== '' &&
             formData.banner !== '' &&
             formData.description !== '' &&
@@ -199,6 +200,7 @@ const CreateApplication = () => {
 
         const payload = {
             name: formData.name,
+            localLanguage: formData.localLanguage,
             region: formData.region,
             banner: formData.banner,
             description: formData.description,
@@ -263,6 +265,19 @@ const CreateApplication = () => {
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             placeholder="Enter application name"
+                            disabled={submitting}
+                        />
+                    </div>
+
+                    {/* Local Language */}
+                    <div className="form-field">
+                        <label htmlFor="localLanguage">Local Language for Application <span className="required">*</span></label>
+                        <input
+                            id="localLanguage"
+                            type="text"
+                            value={formData.localLanguage}
+                            onChange={(e) => handleInputChange('localLanguage', e.target.value)}
+                            placeholder="Enter Local Language"
                             disabled={submitting}
                         />
                     </div>

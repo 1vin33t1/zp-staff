@@ -91,10 +91,9 @@ const LoginPage = ({ onLogin }) => {
             })
 
             const data = await response.json()
-            console.log(data);
             if (data.verified) {
                 localStorage.setItem('lastActivity', new Date().toISOString());
-                console.log(data.meta);
+                localStorage.setItem('lastRefresh', new Date().toISOString())
                 if (data.meta)
                     localStorage.setItem("userInfo", JSON.stringify(data.meta));
                 onLogin(email, data.accessToken)

@@ -21,8 +21,21 @@ function App() {
     const refreshTimerRef = useRef(null)
 
     useEffect(() => {
+
+        const lastRefreshString = localStorage.getItem('lastRefresh')
+        if (lastRefreshString) {
+            const currentTime = new Date();
+            const twoMinutesAgo = new Date(currentTime.getTime() - 2 * 60 * 1000);
+            const lastActivityDate = new Date(lastRefreshString);
+            if (lastActivityDate < twoMinutesAgo) {
+                startTokenRefresh(true)
+                return
+            }
+        }
+
         const token = localStorage.getItem('accessToken')
         const email = localStorage.getItem('userEmail')
+
         if (token && email) {
             setIsAuthenticated(true)
             const lastActivityString = localStorage.getItem('lastActivity');
@@ -41,6 +54,9 @@ function App() {
             setUserEmail(email)
             startActivityMonitoring()
             startTokenRefresh()
+        }
+        if (!lastRefreshString) {
+            handleLogout(true)
         }
     }, [])
 
@@ -116,39 +132,45 @@ function App() {
     }
 
     // Auto-refresh token every 5 minutes
-    const startTokenRefresh = () => {
+    const startTokenRefresh = (hitApiImmediately = false) => {
         const refreshToken = async () => {
             try {
                 const response = await fetch('https://api.gramsamruddhi.in/auth/refresh/zp-staff', {
                     method: 'POST',
                     credentials: 'include'
-                })
+                });
 
-                const data = await response.json()
+                const data = await response.json();
 
                 if (data.accessToken) {
                     localStorage.setItem('lastActivity', new Date().toISOString());
-                    localStorage.setItem('accessToken', data.accessToken)
-                    localStorage.setItem('userEmail', data.user)
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('userEmail', data.user);
+                    localStorage.setItem('lastRefresh', new Date().toISOString());
                     if (data.meta)
                         localStorage.setItem("userInfo", JSON.stringify(data.meta));
                 } else {
-                    handleLogout(false)
+                    handleLogout(false);
                 }
             } catch (error) {
-                console.error('Token refresh failed:', error)
+                console.error('Token refresh failed:', error);
             }
+        }
+
+        if (hitApiImmediately) {
+            refreshToken();
         }
 
         // Refresh every 5 minutes
-        refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000)
+        refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000);
 
         return () => {
             if (refreshTimerRef.current) {
-                clearInterval(refreshTimerRef.current)
+                clearInterval(refreshTimerRef.current);
             }
         }
     }
+
 
     const handleLogin = (email, accessToken) => {
         localStorage.setItem('accessToken', accessToken)
