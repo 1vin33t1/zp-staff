@@ -65,7 +65,7 @@ const CreateApplication = () => {
     }
 
     const renderCheckboxGrid = (items, selectedItems, onItemChange) => {
-        const itemsPerRow = 5
+        const itemsPerRow = 4
         const rows = []
         for (let i = 0; i < items.length; i += itemsPerRow) {
             rows.push(items.slice(i, i + itemsPerRow))
@@ -498,7 +498,6 @@ const CreateApplication = () => {
                                     onChange={(e) => handleFileUpload('banner', e.target.files[0])}
                                     accept="image/*"
                                     disabled={uploadingBanner}
-                                    className="file-input-hidden"
                                 />
                                 <label htmlFor="bannerFile"
                                        className={`upload-btn ${formData.banner ? 'uploaded' : ''}`}>
@@ -522,7 +521,6 @@ const CreateApplication = () => {
                                     onChange={(e) => handleFileUpload('description', e.target.files[0])}
                                     accept=".pdf"
                                     disabled={uploadingDescription}
-                                    className="file-input-hidden"
                                 />
                                 <label htmlFor="descriptionFile"
                                        className={`upload-btn ${formData.description ? 'uploaded' : ''}`}>
