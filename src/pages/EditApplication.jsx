@@ -1,77 +1,81 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import React, {useEffect, useState} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
 import './EditApplication.css'
 
 const EditApplication = () => {
     const navigate = useNavigate()
-    const { applicationId } = useParams()
+    const {applicationId} = useParams()
+
+    // Data from API
+    const [eligibilityData, setEligibilityData] = useState({
+        anganwadiList: [],
+        postedTaluka: []
+    })
 
     // Form state
     const [formData, setFormData] = useState({
-        id: '',
         name: '',
-        region: '',
+        taluka: '',
+        gramPanchayatList: [],
+        anganwadiList: [],
         banner: '',
         description: '',
         startDate: '',
         endDate: '',
-        rectificationStartDate: '',
-        rectificationEndDate: '',
         publish: false
     })
 
     // UI state
-    const [regions, setRegions] = useState([])
-    const [loadingRegions, setLoadingRegions] = useState(true)
-    const [loadingData, setLoadingData] = useState(true)
+    const [validationErrors, setValidationErrors] = useState({})
+    const [loading, setLoading] = useState(false)
+    const [loadingEligibility, setLoadingEligibility] = useState(true)
+    const [loadingEditApplication, setLoadingEditApplication] = useState(true)
+    const [errorBreaking, setErrorBreaking] = useState('')
+    const [errorRetry, setErrorRetry] = useState('')
+
     const [uploadingBanner, setUploadingBanner] = useState(false)
     const [uploadingDescription, setUploadingDescription] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-    const [error, setError] = useState('')
-    const [dateError, setDateError] = useState('')
     const [showDisclaimer, setShowDisclaimer] = useState(false)
     const [submitSuccess, setSubmitSuccess] = useState(false)
 
     // Fetch regions and application data on mount
     useEffect(() => {
-        fetchRegions()
+        fetchEligibilityData()
         fetchApplicationData()
     }, [applicationId])
 
-    // Get distinct Talukas from postedTaluka
+    const naturalSort = new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base'
+    }).compare;
+
     const getTalukaOptions = (postedTaluka) => {
         return Array.isArray(postedTaluka) ? postedTaluka : []
     }
 
-    // Get distinct Gram Panchayats for selected Taluka
     const getGramPanchayatOptions = (anganwadiList, selectedTaluka) => {
         if (!selectedTaluka || !Array.isArray(anganwadiList)) return []
-
         const filtered = anganwadiList.filter(item => item.taluka === selectedTaluka)
         const gramPanchayats = [...new Set(filtered.map(item => item.gramPanchayat))]
-        return gramPanchayats.sort()
+        return gramPanchayats.sort(naturalSort)
     }
 
-    // Get distinct Anganwadi names for selected Taluka and Gram Panchayats
     const getAnganwadiOptions = (anganwadiList, selectedTaluka, selectedGramPanchayats) => {
         if (!selectedTaluka || !Array.isArray(anganwadiList) || !Array.isArray(selectedGramPanchayats)) return []
-
         const filtered = anganwadiList.filter(item =>
             item.taluka === selectedTaluka && selectedGramPanchayats.includes(item.gramPanchayat)
         )
         const anganwadis = [...new Set(filtered.map(item => item.name))]
-        return anganwadis.sort()
+        return anganwadis.sort(naturalSort)
     }
 
-    // Render checkbox grid (5 items per row)
     const renderCheckboxGrid = (items, selectedItems, onItemChange) => {
         const itemsPerRow = 5
         const rows = []
-
         for (let i = 0; i < items.length; i += itemsPerRow) {
             rows.push(items.slice(i, i + itemsPerRow))
         }
-
         return (
             <div className="checkbox-grid">
                 {rows.map((row, rowIndex) => (
@@ -97,12 +101,11 @@ const EditApplication = () => {
         )
     }
 
-    const fetchRegions = async (retryCount = 0) => {
-        const maxRetries = 3
+    const fetchEligibilityData = async () => {
         const token = localStorage.getItem('accessToken')
 
         try {
-            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligible-region', {
+            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligibility', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -111,19 +114,76 @@ const EditApplication = () => {
 
             const data = await response.json()
 
-            if (data.result && data.data && data.data.region) {
-                setRegions(data.data.region)
-                setLoadingRegions(false)
+            if (data.result && data.data) {
+                setEligibilityData({
+                    anganwadiList: data.data.anganwadiList || [],
+                    postedTaluka: data.data.postedTaluka || []
+                })
+
+                if (data.data.postedTaluka && data.data.postedTaluka.length === 1) {
+                    setFormData(prev => ({
+                        ...prev,
+                        taluka: data.data.postedTaluka[0]
+                    }))
+                    handleTalukaChange({target: {value: data.data.postedTaluka[0]}});
+                }
             } else {
-                throw new Error('Invalid response format')
+                throw new Error('Invalid response')
             }
         } catch (err) {
-            if (retryCount < maxRetries - 1) {
-                setTimeout(() => fetchRegions(retryCount + 1), 1000)
-            } else {
-                setError('Failed to load regions after 3 attempts.')
-                setLoadingRegions(false)
-            }
+            setErrorBreaking('Failed to load eligibility data. Please try again.')
+        } finally {
+            setLoadingEligibility(false)
+        }
+    }
+
+    const isEditAllowed = eligibilityData.postedTaluka.includes(formData.taluka)
+
+    const talukaOptions = getTalukaOptions(eligibilityData.postedTaluka)
+    const gramPanchayatOptions = getGramPanchayatOptions(
+        eligibilityData.anganwadiList,
+        formData.taluka
+    )
+    const anganwadiOptions = getAnganwadiOptions(
+        eligibilityData.anganwadiList,
+        formData.taluka,
+        formData.gramPanchayatList
+    )
+
+    const handleTalukaChange = (e) => {
+        const selectedTaluka = e.target.value
+        setFormData(prev => ({
+            ...prev,
+            taluka: selectedTaluka,
+            gramPanchayatList: [],
+            anganwadiList: []
+        }))
+
+        if (validationErrors.taluka) {
+            setValidationErrors(prev => ({...prev, taluka: ''}))
+        }
+    }
+
+    const handleGramPanchayatChange = (updated) => {
+        setFormData(prev => ({
+            ...prev,
+            gramPanchayatList: updated,
+            anganwadiList: []
+        }))
+
+        if (validationErrors.gramPanchayatList) {
+            setValidationErrors(prev => ({...prev, gramPanchayatList: ''}))
+        }
+    }
+
+    const handleAnganwadiChange = (updated) => {
+        setFormData(prev => ({
+            ...prev,
+            anganwadiList: updated
+        }))
+
+        if (validationErrors.anganwadiList) {
+            setValidationErrors(prev => ({...prev, anganwadiList: ''}))
         }
     }
 
@@ -145,74 +205,93 @@ const EditApplication = () => {
                 setFormData({
                     id: appData.id,
                     name: appData.name || '',
-                    region: appData.region || '',
+                    taluka: appData.taluka || '',
+                    gramPanchayatList: appData.gramPanchayatList || [],
+                    anganwadiList: appData.anganwadiList || [],
                     banner: appData.banner || '',
                     description: appData.description || '',
                     startDate: convertDateToInput(appData.startDate) || '',
                     endDate: convertDateToInput(appData.endDate) || '',
-                    rectificationStartDate: convertDateToInput(appData.rectificationStartDate) || '',
-                    rectificationEndDate: convertDateToInput(appData.rectificationEndDate) || '',
                     publish: appData.publish || false
                 })
             } else {
                 throw new Error('Invalid response format')
             }
         } catch (err) {
-            setError('Failed to load application data. Please try again.')
+            setErrorBreaking('Failed to load application data. Please try again.')
         } finally {
-            setLoadingData(false)
+            setLoadingEditApplication(false)
         }
     }
 
     const handleInputChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }))
-        setError('')
-        setDateError('')
+        setFormData(prev => ({...prev, [field]: value}))
+        setErrorRetry('')
     }
 
-    // Date validation function
-    const validateDates = () => {
-        const { startDate, endDate, rectificationStartDate, rectificationEndDate } = formData
+    const validateForm = () => {
+        const errors = {}
 
-        // Check if End Date > Start Date
+        if (!formData.name || formData.name.trim() === '') {
+            errors.name = 'Application name is required'
+        }
+
+        if (!formData.taluka) {
+            errors.taluka = 'Taluka is required'
+        }
+
+        if (formData.gramPanchayatList.length === 0) {
+            errors.gramPanchayatList = 'At least one Gram Panchayat is required'
+        }
+
+        if (formData.anganwadiList.length === 0) {
+            errors.anganwadiList = 'At least one Anganwadi is required'
+        }
+
+        if (!formData.banner) {
+            errors.banner = 'Banner is required'
+        }
+
+        if (!formData.description) {
+            errors.description = 'Description is required'
+        }
+
+        if (!formData.startDate) {
+            errors.startDate = 'Start date is required'
+        }
+
+        if (!formData.endDate) {
+            errors.endDate = 'End date is required'
+        }
+
+        if (formData.startDate && formData.endDate) {
+            if (new Date(formData.endDate) <= new Date(formData.startDate)) {
+                errors.endDate = 'End date must be greater than start date'
+            }
+        }
+
+        setValidationErrors(errors)
+        return Object.keys(errors).length === 0
+    }
+
+
+    const validateDates = () => {
+        const {startDate, endDate} = formData
         if (startDate && endDate) {
             if (new Date(endDate) <= new Date(startDate)) {
-                setDateError('End Date must be greater than Start Date')
                 return false
             }
         }
-
-        // Check if Rectification Start Date > End Date
-        if (endDate && rectificationStartDate) {
-            if (new Date(rectificationStartDate) <= new Date(endDate)) {
-                setDateError('Rectification Start Date must be greater than End Date')
-                return false
-            }
-        }
-
-        // Check if Rectification End Date > Rectification Start Date
-        if (rectificationStartDate && rectificationEndDate) {
-            if (new Date(rectificationEndDate) <= new Date(rectificationStartDate)) {
-                setDateError('Rectification End Date must be greater than Rectification Start Date')
-                return false
-            }
-        }
-
-        // If Rectification Start Date is present, Rectification End Date is required
-        if (rectificationStartDate && !rectificationEndDate) {
-            setDateError('Rectification End Date is required when Rectification Start Date is provided')
-            return false
-        }
-
         return true
     }
+
 
     const handleFileUpload = async (field, file) => {
         const token = localStorage.getItem('accessToken')
         const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
 
         setLoading(true)
-        setError('')
+        setErrorRetry('')
 
         try {
             const formDataUpload = new FormData()
@@ -235,7 +314,7 @@ const EditApplication = () => {
                 throw new Error('Upload failed')
             }
         } catch (err) {
-            setError(`Failed to upload ${field}. Please try again.`)
+            setErrorRetry(`Failed to upload ${field}. Please try again.`)
         } finally {
             setLoading(false)
         }
@@ -280,7 +359,9 @@ const EditApplication = () => {
 
     const isMandatoryFieldsFilled = () => {
         return formData.name.trim() !== '' &&
-            formData.region !== '' &&
+            formData.taluka !== '' &&
+            formData.gramPanchayatList?.length > 0 &&
+            formData.anganwadiList?.length > 0 &&
             formData.banner !== '' &&
             formData.description !== '' &&
             formData.startDate !== '' &&
@@ -289,7 +370,7 @@ const EditApplication = () => {
 
     const handleSubmitClick = () => {
         if (!isMandatoryFieldsFilled()) {
-            setError('Please fill all mandatory fields before submitting')
+            setErrorRetry('Please fill all mandatory fields before submitting')
             return
         }
 
@@ -302,22 +383,25 @@ const EditApplication = () => {
     }
 
     const handleConfirmSubmit = async () => {
+        if (!validateForm()) {
+            return
+        }
         setShowDisclaimer(false)
         setSubmitting(true)
-        setError('')
+        setErrorRetry('')
 
         const token = localStorage.getItem('accessToken')
 
         const payload = {
             id: formData.id,
             name: formData.name,
-            region: formData.region,
+            taluka: formData.taluka,
+            gramPanchayatList: formData.gramPanchayatList,
+            anganwadiList: formData.anganwadiList,
             banner: formData.banner,
             description: formData.description,
             startDate: convertDateToAPI(formData.startDate),
             endDate: convertDateToAPI(formData.endDate),
-            rectificationStartDate: convertDateToAPI(formData.rectificationStartDate) || '',
-            rectificationEndDate: convertDateToAPI(formData.rectificationEndDate) || '',
             publish: formData.publish
         }
 
@@ -342,12 +426,12 @@ const EditApplication = () => {
                 throw new Error('Submission failed')
             }
         } catch (err) {
-            setError('Failed to update application. Please try again.')
+            setErrorRetry('Failed to update application. Please try again.')
             setSubmitting(false)
         }
     }
 
-    if (loadingData) {
+    if (loading || loadingEditApplication || loadingEligibility) {
         return (
             <div className="page-container">
                 <div className="page-content">
@@ -356,6 +440,15 @@ const EditApplication = () => {
                         <p>Loading application data...</p>
                     </div>
                 </div>
+            </div>
+        )
+    }
+
+    if (!isEditAllowed) {
+        return (
+            <div className="error-box">
+                <p>❌ You have not been posted to application taluka.</p>
+                <p>To edit this application, you need to be posted to the same taluka.</p>
             </div>
         )
     }
@@ -375,10 +468,9 @@ const EditApplication = () => {
                     </div>
                 )}
 
-                {error && <div className="error-message">{error}</div>}
-                {dateError && <div className="error-message">{dateError}</div>}
-
-                <div className="form-container">
+                {errorRetry && <div className="error-message">{errorRetry}</div>}
+                {errorBreaking && <div className="error-message">{errorBreaking}</div>}
+                {!errorBreaking && <div className="form-container">
                     {/* Name */}
                     <div className="form-field">
                         <label htmlFor="name">Name of Application <span className="required">*</span></label>
@@ -392,25 +484,67 @@ const EditApplication = () => {
                         />
                     </div>
 
-                    {/* Region */}
-                    <div className="form-field">
-                        <label htmlFor="region">Region <span className="required">*</span></label>
-                        {loadingRegions ? (
-                            <div className="loading-text">Loading regions...</div>
+                    {/* Taluka Selection */}
+                    <div className="form-group">
+                        <label>Taluka *</label>
+                        {talukaOptions.length === 1 ? (
+                            <div className="display-field">
+                                {talukaOptions[0]} (Auto-selected)
+                            </div>
                         ) : (
                             <select
-                                id="region"
-                                value={formData.region}
-                                onChange={(e) => handleInputChange('region', e.target.value)}
+                                value={formData.taluka}
+                                onChange={handleTalukaChange}
                                 disabled={submitting}
                             >
-                                <option value="">Select a region</option>
-                                {regions.map((region, index) => (
-                                    <option key={index} value={region}>{region}</option>
+                                <option value="">Select Taluka</option>
+                                {talukaOptions.map(taluka => (
+                                    <option key={taluka} value={taluka}>
+                                        {taluka}
+                                    </option>
                                 ))}
                             </select>
                         )}
+                        {validationErrors.taluka && <span className="error">{validationErrors.taluka}</span>}
                     </div>
+
+                    {/* Gram Panchayat Selection */}
+                    {formData.taluka && (
+                        <div className="form-group">
+                            <label>Gram Panchayat * ({formData.gramPanchayatList.length} selected)</label>
+                            {gramPanchayatOptions.length > 0 ? (
+                                renderCheckboxGrid(
+                                    gramPanchayatOptions,
+                                    formData.gramPanchayatList,
+                                    handleGramPanchayatChange
+                                )
+                            ) : (
+                                <p className="no-options">No Gram Panchayats available for selected Taluka</p>
+                            )}
+                            {validationErrors.gramPanchayatList && (
+                                <span className="error">{validationErrors.gramPanchayatList}</span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Anganwadi Selection */}
+                    {formData.gramPanchayatList.length > 0 && (
+                        <div className="form-group">
+                            <label>Anganwadi * ({formData.anganwadiList.length} selected)</label>
+                            {anganwadiOptions.length > 0 ? (
+                                renderCheckboxGrid(
+                                    anganwadiOptions,
+                                    formData.anganwadiList,
+                                    handleAnganwadiChange
+                                )
+                            ) : (
+                                <p className="no-options">No Anganwadis available for selected options</p>
+                            )}
+                            {validationErrors.anganwadiList && (
+                                <span className="error">{validationErrors.anganwadiList}</span>
+                            )}
+                        </div>
+                    )}
 
                     {/* Banner */}
                     <div className="form-group">
@@ -421,7 +555,7 @@ const EditApplication = () => {
                             <input
                                 type="file"
                                 id="bannerFile"
-                                onChange={(e) => handleFileUpload('banner',e.target.files[0])}
+                                onChange={(e) => handleFileUpload('banner', e.target.files[0])}
                                 accept="image/*"
                                 disabled={uploadingBanner}
                                 className="file-input-hidden"
@@ -449,7 +583,8 @@ const EditApplication = () => {
                                 disabled={uploadingDescription}
                                 className="file-input-hidden"
                             />
-                            <label htmlFor="descriptionFile" className={`upload-btn ${formData.description ? 'uploaded' : ''}`}>
+                            <label htmlFor="descriptionFile"
+                                   className={`upload-btn ${formData.description ? 'uploaded' : ''}`}>
                                 {uploadingDescription ? '⏳ Uploading...' : formData.description ? '✓ Uploaded' : '📤 Upload Description'}
                             </label>
                             {formData.description && (
@@ -484,41 +619,6 @@ const EditApplication = () => {
                         />
                     </div>
 
-                    {/* Rectification Start Date */}
-                    <div className="form-field">
-                        <label htmlFor="rectificationStartDate">
-                            Rectification Start Date
-                            {formData.rectificationStartDate && <span className="required">*</span>}
-                        </label>
-                        <input
-                            id="rectificationStartDate"
-                            type="date"
-                            value={formData.rectificationStartDate}
-                            min={formData.endDate || getTodayDate()}
-                            onChange={(e) => handleInputChange('rectificationStartDate', e.target.value)}
-                            disabled={submitting}
-                        />
-                    </div>
-
-                    {/* Rectification End Date */}
-                    <div className="form-field">
-                        <label htmlFor="rectificationEndDate">
-                            Rectification End Date
-                            {formData.rectificationStartDate && <span className="required">*</span>}
-                        </label>
-                        <input
-                            id="rectificationEndDate"
-                            type="date"
-                            value={formData.rectificationEndDate}
-                            min={formData.rectificationStartDate || getTodayDate()}
-                            onChange={(e) => handleInputChange('rectificationEndDate', e.target.value)}
-                            disabled={submitting || !formData.rectificationStartDate}
-                        />
-                        {formData.rectificationStartDate && !formData.rectificationEndDate && (
-                            <span className="field-hint">Required when Rectification Start Date is provided</span>
-                        )}
-                    </div>
-
                     {/* Publish Checkbox */}
                     <div className="form-field checkbox-field">
                         <label>
@@ -550,7 +650,7 @@ const EditApplication = () => {
                             {submitting ? 'Updating...' : 'Update Application'}
                         </button>
                     </div>
-                </div>
+                </div>}
 
                 {/* Disclaimer Modal */}
                 {showDisclaimer && (
