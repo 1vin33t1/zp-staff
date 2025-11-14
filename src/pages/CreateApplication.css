@@ -286,32 +286,8 @@
     gap: 1rem;
 }
 
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-}
-
 .checkbox-label:hover {
     background-color: #f3f4f6;
-}
-
-.checkbox-label input[type="checkbox"] {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-}
-
-.checkbox-label span {
-    font-size: 0.9rem;
-    color: #374151;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .no-options {
@@ -341,6 +317,32 @@
     color: #374151;
     font-weight: 500;
 }
+
+.checkbox-label {
+    display: flex;              /* ← Enable flexbox */
+    flex-direction: row;        /* ← Force horizontal */
+    align-items: center;        /* ← Vertical centering */
+    gap: 0.5rem;               /* Space between box and text */
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;                  /* ← Remove browser default */
+    flex-shrink: 0;             /* ← Keep size fixed */
+}
+
+.checkbox-label span {
+    font-size: 0.9rem;
+    line-height: 1.2;           /* ← Match checkbox height */
+    margin: 0;                  /* ← Remove browser default */
+    flex: 1;                    /* ← Take remaining space */
+}
+
 
 @media (max-width: 768px) {
     .checkbox-row {

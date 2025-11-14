@@ -26,7 +26,9 @@ const CreateApplication = () => {
 
     const [validationErrors, setValidationErrors] = useState({})
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+    const [errorBreaking, setErrorBreaking] = useState('')
+    const [errorRetry, setErrorRetry] = useState('')
+
     const [submitting, setSubmitting] = useState(false)
     const [uploadingBanner, setUploadingBanner] = useState(false)
     const [uploadingDescription, setUploadingDescription] = useState(false)
@@ -37,6 +39,11 @@ const CreateApplication = () => {
         fetchEligibilityData()
     }, [])
 
+    const naturalSort = new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base'
+    }).compare;
+
     const getTalukaOptions = (postedTaluka) => {
         return Array.isArray(postedTaluka) ? postedTaluka : []
     }
@@ -45,7 +52,7 @@ const CreateApplication = () => {
         if (!selectedTaluka || !Array.isArray(anganwadiList)) return []
         const filtered = anganwadiList.filter(item => item.taluka === selectedTaluka)
         const gramPanchayats = [...new Set(filtered.map(item => item.gramPanchayat))]
-        return gramPanchayats.sort()
+        return gramPanchayats.sort(naturalSort)
     }
 
     const getAnganwadiOptions = (anganwadiList, selectedTaluka, selectedGramPanchayats) => {
@@ -54,7 +61,7 @@ const CreateApplication = () => {
             item.taluka === selectedTaluka && selectedGramPanchayats.includes(item.gramPanchayat)
         )
         const anganwadis = [...new Set(filtered.map(item => item.name))]
-        return anganwadis.sort()
+        return anganwadis.sort(naturalSort)
     }
 
     const renderCheckboxGrid = (items, selectedItems, onItemChange) => {
@@ -110,14 +117,15 @@ const CreateApplication = () => {
                 if (data.data.postedTaluka && data.data.postedTaluka.length === 1) {
                     setFormData(prev => ({
                         ...prev,
-                        taluka: data.data.postedTaluka
+                        taluka: data.data.postedTaluka[0]
                     }))
+                    handleTalukaChange({target: {value: data.data.postedTaluka[0]}});
                 }
             } else {
                 throw new Error('Invalid response')
             }
         } catch (err) {
-            setError('Failed to load eligibility data. Please try again.')
+            setErrorBreaking('Failed to load eligibility data. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -143,7 +151,6 @@ const CreateApplication = () => {
             anganwadiList: []
         }))
 
-        // Clear validation error
         if (validationErrors.taluka) {
             setValidationErrors(prev => ({...prev, taluka: ''}))
         }
@@ -172,16 +179,9 @@ const CreateApplication = () => {
         }
     }
 
-    const handleInputChange = (e) => {
-        const {name, value, type, checked} = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }))
-
-        if (validationErrors[name]) {
-            setValidationErrors(prev => ({...prev, [name]: ''}))
-        }
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({...prev, [field]: value}))
+        setErrorRetry('')
     }
 
     const validateForm = () => {
@@ -262,7 +262,7 @@ const CreateApplication = () => {
         const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
 
         setLoading(true)
-        setError('')
+        setErrorRetry('')
 
         try {
             const formDataUpload = new FormData()
@@ -285,7 +285,7 @@ const CreateApplication = () => {
                 throw new Error('Upload failed')
             }
         } catch (err) {
-            setError(`Failed to upload ${field}. Please try again.`)
+            setErrorRetry(`Failed to upload ${field}. Please try again.`)
         } finally {
             setLoading(false)
         }
@@ -293,7 +293,7 @@ const CreateApplication = () => {
 
     // Date validation function
     const validateDates = () => {
-        const { startDate, endDate } = formData
+        const {startDate, endDate} = formData
         if (startDate && endDate) {
             if (new Date(endDate) <= new Date(startDate)) {
                 return false
@@ -315,7 +315,7 @@ const CreateApplication = () => {
 
     const handleSubmitClick = () => {
         if (!isMandatoryFieldsFilled()) {
-            setError('Please fill all mandatory fields before submitting')
+            setErrorRetry('Please fill all mandatory fields before submitting')
             return
         }
 
@@ -333,7 +333,7 @@ const CreateApplication = () => {
         }
         setShowDisclaimer(false)
         setSubmitting(true)
-        setError('')
+        setErrorRetry('')
 
         const token = localStorage.getItem('accessToken')
 
@@ -370,7 +370,7 @@ const CreateApplication = () => {
                 throw new Error('Submission failed')
             }
         } catch (err) {
-            setError('Failed to create application. Please try again.')
+            setErrorRetry('Failed to create application. Please try again.')
             setSubmitting(false)
         }
     }
@@ -405,24 +405,23 @@ const CreateApplication = () => {
                     </div>
                 )}
 
-                {error && <div className="error-message">{error}</div>}
+                {errorRetry && <div className="error-message">{errorRetry}</div>}
 
                 <div className="form-container">
-                    {error && <div className="error-message">{error}</div>}
-                    {!error && <form onSubmit={handleConfirmSubmit}>
+                    {errorBreaking && <div className="error-message">{errorBreaking}</div>}
+                    {!errorBreaking && <>
 
-                        {/* Application Name */}
-                        <div className="form-group">
-                            <label>Application Name *</label>
+                        {/* Name */}
+                        <div className="form-field">
+                            <label htmlFor="name">Name of Application <span className="required">*</span></label>
                             <input
+                                id="name"
                                 type="text"
-                                name="name"
                                 value={formData.name}
-                                onChange={handleInputChange}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
                                 placeholder="Enter application name"
                                 disabled={submitting}
                             />
-                            {validationErrors.name && <span className="error">{validationErrors.name}</span>}
                         </div>
 
                         {/* Taluka Selection */}
@@ -430,7 +429,7 @@ const CreateApplication = () => {
                             <label>Taluka *</label>
                             {talukaOptions.length === 1 ? (
                                 <div className="display-field">
-                                    {talukaOptions} (Auto-selected)
+                                    {talukaOptions[0]} (Auto-selected)
                                 </div>
                             ) : (
                                 <select
@@ -501,7 +500,8 @@ const CreateApplication = () => {
                                     disabled={uploadingBanner}
                                     className="file-input-hidden"
                                 />
-                                <label htmlFor="bannerFile" className={`upload-btn ${formData.banner ? 'uploaded' : ''}`}>
+                                <label htmlFor="bannerFile"
+                                       className={`upload-btn ${formData.banner ? 'uploaded' : ''}`}>
                                     {uploadingBanner ? '⏳ Uploading...' : formData.banner ? '✓ Uploaded' : '📤 Upload Banner'}
                                 </label>
                                 {formData.banner && (
@@ -534,30 +534,33 @@ const CreateApplication = () => {
                             </div>
                         </div>
 
-                        {/* Start Date */}
-                        <div className="form-field">
-                            <label htmlFor="startDate">Start Date <span className="required">*</span></label>
-                            <input
-                                id="startDate"
-                                type="date"
-                                value={formData.startDate}
-                                min={getDateMinus60Days()}
-                                onChange={(e) => handleInputChange('startDate', e.target.value)}
-                                disabled={submitting}
-                            />
-                        </div>
 
-                        {/* End Date */}
-                        <div className="form-field">
-                            <label htmlFor="endDate">End Date <span className="required">*</span></label>
-                            <input
-                                id="endDate"
-                                type="date"
-                                value={formData.endDate}
-                                min={formData.startDate || getTodayDate()}
-                                onChange={(e) => handleInputChange('endDate', e.target.value)}
-                                disabled={submitting}
-                            />
+                        <div className="form-group">
+                            {/* Start Date */}
+                            <div className="form-field">
+                                <label htmlFor="startDate">Start Date <span className="required">*</span></label>
+                                <input
+                                    id="startDate"
+                                    type="date"
+                                    value={formData.startDate}
+                                    min={getDateMinus60Days()}
+                                    onChange={(e) => handleInputChange('startDate', e.target.value)}
+                                    disabled={submitting}
+                                />
+                            </div>
+                            <p></p>
+                            {/* End Date */}
+                            <div className="form-field">
+                                <label htmlFor="endDate">End Date <span className="required">*</span></label>
+                                <input
+                                    id="endDate"
+                                    type="date"
+                                    value={formData.endDate}
+                                    min={formData.startDate || getTodayDate()}
+                                    onChange={(e) => handleInputChange('endDate', e.target.value)}
+                                    disabled={submitting}
+                                />
+                            </div>
                         </div>
 
                         {/* Publish Checkbox */}
@@ -592,7 +595,7 @@ const CreateApplication = () => {
                             </button>
                         </div>
 
-                    </form>}
+                    </>}
 
                     {/* Disclaimer Modal */}
                     {showDisclaimer && (
