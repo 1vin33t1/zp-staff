@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import './EditApplication.css'
+import { useNavigate } from 'react-router-dom'
+import './CreateApplication.css'
 
-const EditApplication = () => {
+const CreateApplication = () => {
     const navigate = useNavigate()
-    const { applicationId } = useParams()
 
     // Form state
     const [formData, setFormData] = useState({
-        id: '',
         name: '',
+        localLanguage: '',
         region: '',
         banner: '',
         description: '',
@@ -23,7 +22,6 @@ const EditApplication = () => {
     // UI state
     const [regions, setRegions] = useState([])
     const [loadingRegions, setLoadingRegions] = useState(true)
-    const [loadingData, setLoadingData] = useState(true)
     const [uploadingBanner, setUploadingBanner] = useState(false)
     const [uploadingDescription, setUploadingDescription] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -32,70 +30,10 @@ const EditApplication = () => {
     const [showDisclaimer, setShowDisclaimer] = useState(false)
     const [submitSuccess, setSubmitSuccess] = useState(false)
 
-    // Fetch regions and application data on mount
+    // Fetch regions on mount with retry logic
     useEffect(() => {
         fetchRegions()
-        fetchApplicationData()
-    }, [applicationId])
-
-    // Get distinct Talukas from postedTaluka
-    const getTalukaOptions = (postedTaluka) => {
-        return Array.isArray(postedTaluka) ? postedTaluka : []
-    }
-
-    // Get distinct Gram Panchayats for selected Taluka
-    const getGramPanchayatOptions = (anganwadiList, selectedTaluka) => {
-        if (!selectedTaluka || !Array.isArray(anganwadiList)) return []
-
-        const filtered = anganwadiList.filter(item => item.taluka === selectedTaluka)
-        const gramPanchayats = [...new Set(filtered.map(item => item.gramPanchayat))]
-        return gramPanchayats.sort()
-    }
-
-    // Get distinct Anganwadi names for selected Taluka and Gram Panchayats
-    const getAnganwadiOptions = (anganwadiList, selectedTaluka, selectedGramPanchayats) => {
-        if (!selectedTaluka || !Array.isArray(anganwadiList) || !Array.isArray(selectedGramPanchayats)) return []
-
-        const filtered = anganwadiList.filter(item =>
-            item.taluka === selectedTaluka && selectedGramPanchayats.includes(item.gramPanchayat)
-        )
-        const anganwadis = [...new Set(filtered.map(item => item.name))]
-        return anganwadis.sort()
-    }
-
-    // Render checkbox grid (5 items per row)
-    const renderCheckboxGrid = (items, selectedItems, onItemChange) => {
-        const itemsPerRow = 5
-        const rows = []
-
-        for (let i = 0; i < items.length; i += itemsPerRow) {
-            rows.push(items.slice(i, i + itemsPerRow))
-        }
-
-        return (
-            <div className="checkbox-grid">
-                {rows.map((row, rowIndex) => (
-                    <div key={rowIndex} className="checkbox-row">
-                        {row.map((item) => (
-                            <label key={item} className="checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedItems.includes(item)}
-                                    onChange={(e) => {
-                                        const updated = e.target.checked
-                                            ? [...selectedItems, item]
-                                            : selectedItems.filter(i => i !== item)
-                                        onItemChange(updated)
-                                    }}
-                                />
-                                <span>{item}</span>
-                            </label>
-                        ))}
-                    </div>
-                ))}
-            </div>
-        )
-    }
+    }, [])
 
     const fetchRegions = async (retryCount = 0) => {
         const maxRetries = 3
@@ -121,46 +59,9 @@ const EditApplication = () => {
             if (retryCount < maxRetries - 1) {
                 setTimeout(() => fetchRegions(retryCount + 1), 1000)
             } else {
-                setError('Failed to load regions after 3 attempts.')
+                setError('Failed to load regions after 3 attempts. Please refresh the page.')
                 setLoadingRegions(false)
             }
-        }
-    }
-
-    const fetchApplicationData = async () => {
-        const token = localStorage.getItem('accessToken')
-
-        try {
-            const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/edit-application`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            const data = await response.json()
-
-            if (data.result && data.data) {
-                const appData = data.data
-                setFormData({
-                    id: appData.id,
-                    name: appData.name || '',
-                    region: appData.region || '',
-                    banner: appData.banner || '',
-                    description: appData.description || '',
-                    startDate: convertDateToInput(appData.startDate) || '',
-                    endDate: convertDateToInput(appData.endDate) || '',
-                    rectificationStartDate: convertDateToInput(appData.rectificationStartDate) || '',
-                    rectificationEndDate: convertDateToInput(appData.rectificationEndDate) || '',
-                    publish: appData.publish || false
-                })
-            } else {
-                throw new Error('Invalid response format')
-            }
-        } catch (err) {
-            setError('Failed to load application data. Please try again.')
-        } finally {
-            setLoadingData(false)
         }
     }
 
@@ -260,26 +161,15 @@ const EditApplication = () => {
         return `${year}-${month}-${day}`;
     };
 
-    const convertDateToInput = (dateStr) => {
-        if (!dateStr) return ''
-        const parts = dateStr.split('-')
-        if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}` // DD-MM-YYYY
-        }
-        return dateStr
-    }
-
-    const convertDateToAPI = (dateStr) => {
-        if (!dateStr) return ''
-        const parts = dateStr.split('-')
-        if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}` // DD-MM-YYYY
-        }
-        return dateStr
+    const formatDateToDDMMYYYY = (dateString) => {
+        if (!dateString) return ''
+        const [year, month, day] = dateString.split('-')
+        return `${day}-${month}-${year}`
     }
 
     const isMandatoryFieldsFilled = () => {
         return formData.name.trim() !== '' &&
+            formData.localLanguage.trim() !== '' &&
             formData.region !== '' &&
             formData.banner !== '' &&
             formData.description !== '' &&
@@ -309,20 +199,20 @@ const EditApplication = () => {
         const token = localStorage.getItem('accessToken')
 
         const payload = {
-            id: formData.id,
             name: formData.name,
+            localLanguage: formData.localLanguage,
             region: formData.region,
             banner: formData.banner,
             description: formData.description,
-            startDate: convertDateToAPI(formData.startDate),
-            endDate: convertDateToAPI(formData.endDate),
-            rectificationStartDate: convertDateToAPI(formData.rectificationStartDate) || '',
-            rectificationEndDate: convertDateToAPI(formData.rectificationEndDate) || '',
+            startDate: formatDateToDDMMYYYY(formData.startDate),
+            endDate: formatDateToDDMMYYYY(formData.endDate),
+            rectificationStartDate: formData.rectificationStartDate ? formatDateToDDMMYYYY(formData.rectificationStartDate) : '',
+            rectificationEndDate: formData.rectificationEndDate ? formatDateToDDMMYYYY(formData.rectificationEndDate) : '',
             publish: formData.publish
         }
 
         try {
-            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/edit-application', {
+            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/create-application', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -336,42 +226,29 @@ const EditApplication = () => {
             if (data.result && data.data === 'success') {
                 setSubmitSuccess(true)
                 setTimeout(() => {
-                    navigate('/zp-staff/view-application')
+                    navigate('/zp-staff/dashboard')
                 }, 2000)
             } else {
                 throw new Error('Submission failed')
             }
         } catch (err) {
-            setError('Failed to update application. Please try again.')
+            setError('Failed to create application. Please try again.')
             setSubmitting(false)
         }
-    }
-
-    if (loadingData) {
-        return (
-            <div className="page-container">
-                <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading application data...</p>
-                    </div>
-                </div>
-            </div>
-        )
     }
 
     return (
         <div className="page-container">
             <div className="page-content">
                 <div className="page-header">
-                    <h1>Edit Application</h1>
-                    <p>Update the application details below</p>
+                    <h1>Create Application</h1>
+                    <p>Fill in the details below to create a new application</p>
                 </div>
 
                 {submitSuccess && (
                     <div className="success-banner">
                         <div className="success-icon">✓</div>
-                        <div>Application successfully updated!</div>
+                        <div>Application successfully created!</div>
                     </div>
                 )}
 
@@ -388,6 +265,19 @@ const EditApplication = () => {
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             placeholder="Enter application name"
+                            disabled={submitting}
+                        />
+                    </div>
+
+                    {/* Local Language */}
+                    <div className="form-field">
+                        <label htmlFor="localLanguage">Local Language for Application <span className="required">*</span></label>
+                        <input
+                            id="localLanguage"
+                            type="text"
+                            value={formData.localLanguage}
+                            onChange={(e) => handleInputChange('localLanguage', e.target.value)}
+                            placeholder="Enter Local Language"
                             disabled={submitting}
                         />
                     </div>
@@ -457,6 +347,7 @@ const EditApplication = () => {
                             )}
                         </div>
                     </div>
+
 
                     {/* Start Date */}
                     <div className="form-field">
@@ -536,10 +427,10 @@ const EditApplication = () => {
                     <div className="form-actions">
                         <button
                             className="secondary-btn"
-                            onClick={() => navigate('/zp-staff/view-application')}
+                            onClick={() => navigate('/zp-staff/dashboard')}
                             disabled={submitting}
                         >
-                            Back to Applications
+                            Back to Dashboard
                         </button>
 
                         <button
@@ -547,7 +438,7 @@ const EditApplication = () => {
                             onClick={handleSubmitClick}
                             disabled={submitting}
                         >
-                            {submitting ? 'Updating...' : 'Update Application'}
+                            {submitting ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </div>
@@ -556,7 +447,7 @@ const EditApplication = () => {
                 {showDisclaimer && (
                     <div className="modal-overlay">
                         <div className="modal-content">
-                            <h3>Confirm Update</h3>
+                            <h3>Confirm Submission</h3>
                             <p>Please verify all data before submitting the application. Thank you.</p>
                             <div className="modal-actions">
                                 <button
@@ -569,7 +460,7 @@ const EditApplication = () => {
                                     className="primary-btn"
                                     onClick={handleConfirmSubmit}
                                 >
-                                    Confirm Update
+                                    Confirm Submit
                                 </button>
                             </div>
                         </div>
@@ -580,4 +471,4 @@ const EditApplication = () => {
     )
 }
 
-export default EditApplication
+export default CreateApplication
