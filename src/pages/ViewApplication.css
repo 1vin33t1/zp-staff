@@ -81,7 +81,7 @@
     width: 95%;
     margin: 0 auto;
     min-height: 250px;
-    max-height: 400px;
+    max-height: 500px;
     display: flex;
     flex-direction: column;
 }
@@ -130,7 +130,7 @@
 .detail-label {
     font-weight: 600;
     color: #4b5563;
-    min-width: 100px;
+    min-width: 140px;
 }
 
 .detail-value {

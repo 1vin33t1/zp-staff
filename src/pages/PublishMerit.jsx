@@ -35,7 +35,7 @@ const PublishMerit = () => {
     }, [applicationId])
 
     const fetchEligibleCandidates = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(
@@ -144,7 +144,7 @@ const PublishMerit = () => {
     }
 
     const handleFileUpload = async (file, type, userId = null) => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         if (type === 'meritList') {
             setUploadingMeritList(true)
@@ -208,7 +208,7 @@ const PublishMerit = () => {
         setPublishing(true)
         setError('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         const meritUsers = Array.from(selectedCandidates).map(userId => {
             const candidate = candidates.find(c => c.id === userId)

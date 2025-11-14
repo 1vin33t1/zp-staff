@@ -99,7 +99,7 @@ const EditApplication = () => {
 
     const fetchRegions = async (retryCount = 0) => {
         const maxRetries = 3
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligible-region', {
@@ -128,7 +128,7 @@ const EditApplication = () => {
     }
 
     const fetchApplicationData = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/edit-application`, {
@@ -208,7 +208,7 @@ const EditApplication = () => {
     }
 
     const handleFileUpload = async (field, file) => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
         const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
 
         setLoading(true)
@@ -306,7 +306,7 @@ const EditApplication = () => {
         setSubmitting(true)
         setError('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         const payload = {
             id: formData.id,

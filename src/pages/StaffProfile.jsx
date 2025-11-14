@@ -29,7 +29,7 @@ const StaffProfile = () => {
     }, [])
 
     const fetchProfile = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch('https://api.gramsamruddhi.in/zp-staff/profile', {
@@ -40,7 +40,7 @@ const StaffProfile = () => {
             })
 
             const data = await response.json()
-            const storedData = localStorage.getItem("userInfo");
+            const storedData = localStorage.getItem('staffUserInfo');
             const userData = JSON.parse(storedData);
 
             if (data.result && data.data) {
@@ -123,7 +123,7 @@ const StaffProfile = () => {
         setSubmitting(true)
         setError('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         const payload = {
             phoneCode: formData.phoneCode,

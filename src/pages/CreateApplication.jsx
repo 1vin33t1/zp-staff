@@ -96,7 +96,7 @@ const CreateApplication = () => {
     }
 
     const fetchEligibilityData = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligibility', {
@@ -258,7 +258,7 @@ const CreateApplication = () => {
     };
 
     const handleFileUpload = async (field, file) => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
         const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
 
         setLoading(true)
@@ -335,7 +335,7 @@ const CreateApplication = () => {
         setSubmitting(true)
         setErrorRetry('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         const payload = {
             name: formData.name,
@@ -425,7 +425,7 @@ const CreateApplication = () => {
                         </div>
 
                         {/* Taluka Selection */}
-                        <div className="form-group">
+                        <div className="form-field">
                             <label>Taluka *</label>
                             {talukaOptions.length === 1 ? (
                                 <div className="display-field">
@@ -450,7 +450,7 @@ const CreateApplication = () => {
 
                         {/* Gram Panchayat Selection */}
                         {formData.taluka && (
-                            <div className="form-group">
+                            <div className="form-field">
                                 <label>Gram Panchayat * ({formData.gramPanchayatList.length} selected)</label>
                                 {gramPanchayatOptions.length > 0 ? (
                                     renderCheckboxGrid(
@@ -469,7 +469,7 @@ const CreateApplication = () => {
 
                         {/* Anganwadi Selection */}
                         {formData.gramPanchayatList.length > 0 && (
-                            <div className="form-group">
+                            <div className="form-field">
                                 <label>Anganwadi * ({formData.anganwadiList.length} selected)</label>
                                 {anganwadiOptions.length > 0 ? (
                                     renderCheckboxGrid(
@@ -487,7 +487,7 @@ const CreateApplication = () => {
                         )}
 
                         {/* Banner Upload */}
-                        <div className="form-group">
+                        <div className="form-field">
                             <label className="form-label">
                                 Banner <span className="required">*</span>
                             </label>
@@ -511,7 +511,7 @@ const CreateApplication = () => {
                         </div>
 
                         {/* Description Upload */}
-                        <div className="form-group">
+                        <div className="form-field">
                             <label className="form-label">
                                 Description <span className="required">*</span>
                             </label>

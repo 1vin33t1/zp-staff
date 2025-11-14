@@ -27,7 +27,7 @@ const ApplicantDetail = () => {
     }, [applicationId, applicantId])
 
     const fetchApplicantData = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(
@@ -177,7 +177,7 @@ const ApplicantDetail = () => {
         setSubmitting(true)
         setError('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(

@@ -102,7 +102,7 @@ const EditApplication = () => {
     }
 
     const fetchEligibilityData = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch('https://api.gramsamruddhi.in/zp-staff/eligibility', {
@@ -188,7 +188,7 @@ const EditApplication = () => {
     }
 
     const fetchApplicationData = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/edit-application`, {
@@ -287,7 +287,7 @@ const EditApplication = () => {
 
 
     const handleFileUpload = async (field, file) => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
         const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
 
         setLoading(true)
@@ -390,7 +390,7 @@ const EditApplication = () => {
         setSubmitting(true)
         setErrorRetry('')
 
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         const payload = {
             id: formData.id,

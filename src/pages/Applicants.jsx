@@ -34,7 +34,7 @@ const Applicants = () => {
     }, [applicants, pincodeFilter, statusFilter, sortColumn, sortDirection])
 
     const fetchApplicants = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants`, {

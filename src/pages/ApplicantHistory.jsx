@@ -22,7 +22,7 @@ const ApplicantHistory = () => {
     }, [searchQuery, historyData])
 
     const fetchHistory = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch(

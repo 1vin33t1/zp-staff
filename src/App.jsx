@@ -21,87 +21,48 @@ function App() {
     const refreshTimerRef = useRef(null)
 
     useEffect(() => {
-
-        const lastRefreshString = localStorage.getItem('lastRefresh')
-        if (lastRefreshString) {
-            const currentTime = new Date();
-            const twoMinutesAgo = new Date(currentTime.getTime() - 2 * 60 * 1000);
-            const lastActivityDate = new Date(lastRefreshString);
-            if (lastActivityDate < twoMinutesAgo) {
-                startTokenRefresh(true)
-                return
-            }
+        const lastActivityString = localStorage.getItem('staffLastActivity');
+        if (!lastActivityString) {
+            handleLogout(true);
+            return;
         }
 
-        const token = localStorage.getItem('accessToken')
-        const email = localStorage.getItem('userEmail')
+        const lastActivity = new Date(lastActivityString);
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+        if (lastActivity < fifteenMinutesAgo) {
+            handleLogout(true);
+            return;
+        }
+
+        const token = localStorage.getItem('staffAccessToken');
+        const email = localStorage.getItem('staffUserEmail');
 
         if (token && email) {
-            setIsAuthenticated(true)
-            const lastActivityString = localStorage.getItem('lastActivity');
-            if (!lastActivityString) {
-                handleLogout(true)
-                return true
-            } else {
-                const currentTime = new Date();
-                const fifteenMinutesAgo = new Date(currentTime.getTime() - 15 * 60 * 1000);
-                const lastActivityDate = new Date(lastActivityString);
-                if (lastActivityDate < fifteenMinutesAgo) {
-                    handleLogout(true)
-                    return true
-                }
-            }
-            setUserEmail(email)
-            startActivityMonitoring()
-            startTokenRefresh()
+            setIsAuthenticated(true);
+            setUserEmail(email);
+            startActivityMonitoring();
+        } else {
+            handleLogout(true);
         }
+
+        let lastRefreshString = localStorage.getItem('staffLastRefresh');
         if (!lastRefreshString) {
-            handleLogout(true)
+            localStorage.setItem('staffLastRefresh', new Date().toISOString());
+            lastRefreshString = new Date(Date.now() - 5 * 60 * 1000).toISOString()
         }
-    }, [])
 
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            // Mark that a refresh is happening
-            sessionStorage.setItem("isRefresh", "true");
-        };
+        const lastRefresh = new Date(lastRefreshString);
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
 
-        const handleUnload = () => {
-            const isRefresh = sessionStorage.getItem("isRefresh");
-
-            // If not a refresh → tab/browser closed
-            if (!isRefresh && isAuthenticated) {
-                const token = localStorage.getItem("accessToken");
-                const blob = new Blob([JSON.stringify({})], { type: "application/json" });
-                navigator.sendBeacon(
-                    "https://api.gramsamruddhi.in/auth/logout/zp-staff",
-                    blob
-                );
-
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("userEmail");
-                localStorage.removeItem("userInfo");
-                localStorage.removeItem('lastActivity');
-            }
-
-            // Always clear refresh marker
-            sessionStorage.removeItem("isRefresh");
-        };
-
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        window.addEventListener("unload", handleUnload);
-
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-            window.removeEventListener("unload", handleUnload);
-        };
-    }, [isAuthenticated]);
+        return startTokenRefresh(lastRefresh < twoMinutesAgo);
+    }, []);
 
 
     // Monitor user activity
     const resetActivityTimer = () => {
         // Retrieve the last activity time from localStorage
-        localStorage.setItem('lastActivity', new Date().toISOString());
+        localStorage.setItem('staffLastActivity', new Date().toISOString());
 
         if (inactivityTimerRef.current) {
             clearTimeout(inactivityTimerRef.current)
@@ -143,12 +104,12 @@ function App() {
                 const data = await response.json();
 
                 if (data.accessToken) {
-                    localStorage.setItem('lastActivity', new Date().toISOString());
-                    localStorage.setItem('accessToken', data.accessToken);
-                    localStorage.setItem('userEmail', data.user);
-                    localStorage.setItem('lastRefresh', new Date().toISOString());
+                    localStorage.setItem('staffLastActivity', new Date().toISOString());
+                    localStorage.setItem('staffAccessToken', data.accessToken);
+                    localStorage.setItem('staffUserEmail', data.user);
+                    localStorage.setItem('staffLastRefresh', new Date().toISOString());
                     if (data.meta)
-                        localStorage.setItem("userInfo", JSON.stringify(data.meta));
+                        localStorage.setItem('staffUserInfo', JSON.stringify(data.meta));
                 } else {
                     handleLogout(false);
                 }
@@ -161,8 +122,9 @@ function App() {
             refreshToken();
         }
 
-        // Refresh every 5 minutes
-        refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000);
+        if (!refreshTimerRef.current) {
+            refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000);
+        }
 
         return () => {
             if (refreshTimerRef.current) {
@@ -173,8 +135,8 @@ function App() {
 
 
     const handleLogin = (email, accessToken) => {
-        localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('userEmail', email)
+        localStorage.setItem('staffAccessToken', accessToken)
+        localStorage.setItem('staffUserEmail', email)
         setIsAuthenticated(true)
         setUserEmail(email)
         startActivityMonitoring()
@@ -193,10 +155,7 @@ function App() {
                 console.error('Logout API error:', error)
             }
         }
-        localStorage.removeItem('lastActivity');
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('userEmail')
-        localStorage.removeItem("userInfo")
+        localStorage.clear()
         setIsAuthenticated(false)
         setUserEmail(null)
 
@@ -211,7 +170,7 @@ function App() {
     }
 
     const getInactivityTime = () => {
-        const lastActivityString = localStorage.getItem('lastActivity');
+        const lastActivityString = localStorage.getItem('staffLastActivity');
         if (isAuthenticated && !lastActivityString) {
             handleLogout(true)
             return true

@@ -13,7 +13,7 @@ const ViewApplication = () => {
     }, [])
 
     const fetchApplications = async () => {
-        const token = localStorage.getItem('accessToken')
+        const token = localStorage.getItem('staffAccessToken')
 
         try {
             const response = await fetch('https://api.gramsamruddhi.in/zp-staff/applications', {
@@ -134,12 +134,12 @@ const ViewApplication = () => {
 
                                         <div className="detail-row">
                                             <span className="detail-label">Gram Panchayat:</span>
-                                            <span className="detail-value">{app.gramPanchayatList.join(",")}</span>
+                                            <span className="detail-value">{app.gramPanchayatList.join(", ")}</span>
                                         </div>
 
                                         <div className="detail-row">
                                             <span className="detail-label">Anganwadi:</span>
-                                            <span className="detail-value">{app.anganwadiList.join(",")}</span>
+                                            <span className="detail-value">{app.anganwadiList.join(", ")}</span>
                                         </div>
 
                                         <div className="detail-row">

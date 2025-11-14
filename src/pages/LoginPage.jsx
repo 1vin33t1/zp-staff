@@ -92,10 +92,10 @@ const LoginPage = ({ onLogin }) => {
 
             const data = await response.json()
             if (data.verified) {
-                localStorage.setItem('lastActivity', new Date().toISOString());
-                localStorage.setItem('lastRefresh', new Date().toISOString())
+                localStorage.setItem('staffLastActivity', new Date().toISOString());
+                localStorage.setItem('staffLastRefresh', new Date().toISOString())
                 if (data.meta)
-                    localStorage.setItem("userInfo", JSON.stringify(data.meta));
+                    localStorage.setItem('staffUserInfo', JSON.stringify(data.meta));
                 onLogin(email, data.accessToken)
             } else {
                 setError(data.failureReason || 'Invalid OTP')
