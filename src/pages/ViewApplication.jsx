@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, {useEffect, useState} from 'react'
+import {useNavigate} from 'react-router-dom'
 import './ViewApplication.css'
 
 const ViewApplication = () => {
@@ -61,8 +61,10 @@ const ViewApplication = () => {
         }
     }
 
-    const handleViewApplicants = (applicationId) => {
-        navigate(`/zp-staff/${applicationId}/applicants`)
+    const handleViewApplicants = (applicationId, allowView) => {
+        if (allowView) {
+            navigate(`/zp-staff/${applicationId}/applicants`)
+        }
     }
 
     const handleEditApplication = (applicationId, allowEdit) => {
@@ -126,8 +128,18 @@ const ViewApplication = () => {
                                 <div className="card-content">
                                     <div className="card-details">
                                         <div className="detail-row">
-                                            <span className="detail-label">Region:</span>
-                                            <span className="detail-value">{app.region}</span>
+                                            <span className="detail-label">Taluka:</span>
+                                            <span className="detail-value">{app.taluka}</span>
+                                        </div>
+
+                                        <div className="detail-row">
+                                            <span className="detail-label">Gram Panchayat:</span>
+                                            <span className="detail-value">{app.gramPanchayatList.join(",")}</span>
+                                        </div>
+
+                                        <div className="detail-row">
+                                            <span className="detail-label">Anganwadi:</span>
+                                            <span className="detail-value">{app.anganwadiList.join(",")}</span>
                                         </div>
 
                                         <div className="detail-row">
@@ -151,7 +163,8 @@ const ViewApplication = () => {
                                     <div className="card-actions">
                                         <button
                                             className="btn-view-applicants"
-                                            onClick={() => handleViewApplicants(app.id)}
+                                            onClick={() => handleViewApplicants(app.id, app.allowViewApplicants)}
+                                            disabled={!app.allowViewApplicants}
                                         >
                                             View Applicants
                                         </button>
