@@ -68,8 +68,7 @@ const ApplicantDetail = () => {
         const updatedRows = [...formData.rows]
         updatedRows[rowIndex].status = status
 
-        // Clear status reason if not Reject or Not Clear
-        if (status !== 'Reject' && status !== 'Not Clear') {
+        if (status !== 'Reject') {
             updatedRows[rowIndex].statusReason = ''
         }
 
@@ -141,7 +140,7 @@ const ApplicantDetail = () => {
                 }
 
                 // Check if status reason is required
-                if ((row.status === 'Reject' || row.status === 'Not Clear') &&
+                if ((row.status === 'Reject') &&
                     (!row.statusReason || row.statusReason.trim().length < 10)) {
                     errors[`row-${index}-statusReason`] = 'Please provide a reason (minimum 10 characters)'
                 }
@@ -149,7 +148,7 @@ const ApplicantDetail = () => {
         })
 
         // Validate overall status comment
-        if ((formData.overallStatus === 'Reject Candidate' || formData.overallStatus === 'Send for Rectification') &&
+        if ((formData.overallStatus === 'Reject Candidate') &&
             (!formData.overallStatusComment || formData.overallStatusComment.trim().length < 20)) {
             errors['overallStatusComment'] = 'Please provide a comment (minimum 20 characters)'
         }
@@ -373,12 +372,6 @@ const ApplicantDetail = () => {
                                                 Reject
                                             </button>
                                             <button
-                                                className={`status-btn not-clear ${row.status === 'Not Clear' ? 'selected' : ''}`}
-                                                onClick={() => handleRowStatusChange(rowIndex, 'Not Clear')}
-                                            >
-                                                Not Clear
-                                            </button>
-                                            <button
                                                 className={`status-btn not-verified ${row.status === 'Not Verified' ? 'selected' : ''}`}
                                                 onClick={() => handleRowStatusChange(rowIndex, 'Not Verified')}
                                             >
@@ -391,10 +384,10 @@ const ApplicantDetail = () => {
                                     </div>
 
                                     {/* Status Reason (conditional) */}
-                                    {(row.status === 'Reject' || row.status === 'Not Clear' || row.statusReason) && (
+                                    {(row.status === 'Reject' || row.statusReason) && (
                                         <div className="field-group">
                                             <label className="field-label">
-                                                Reason {(row.status === 'Reject' || row.status === 'Not Clear') && <span className="required">*</span>}:
+                                                Reason {(row.status === 'Reject') && <span className="required">*</span>}:
                                             </label>
                                             <textarea
                                                 value={row.statusReason}
@@ -435,12 +428,6 @@ const ApplicantDetail = () => {
                             Reject Candidate
                         </button>
                         <button
-                            className={`overall-btn send-rectification ${formData.overallStatus === 'Send for Rectification' ? 'selected' : ''}`}
-                            onClick={() => handleOverallStatusChange('Send for Rectification')}
-                        >
-                            Send for Rectification
-                        </button>
-                        <button
                             className={`overall-btn pending ${formData.overallStatus === 'Pending' ? 'selected' : ''}`}
                             onClick={() => handleOverallStatusChange('Pending')}
                         >
@@ -452,7 +439,7 @@ const ApplicantDetail = () => {
                     <div className="field-group">
                         <label className="field-label">
                             Overall Comment
-                            {(formData.overallStatus === 'Reject Candidate' || formData.overallStatus === 'Send for Rectification') &&
+                            {(formData.overallStatus === 'Reject Candidate') &&
                                 <span className="required">*</span>}:
                         </label>
                         <textarea
@@ -461,7 +448,7 @@ const ApplicantDetail = () => {
                             className="overall-comment-textarea"
                             rows="4"
                             placeholder={
-                                (formData.overallStatus === 'Reject Candidate' || formData.overallStatus === 'Send for Rectification')
+                                (formData.overallStatus === 'Reject Candidate')
                                     ? 'Enter comment (minimum 20 characters)'
                                     : 'Enter any additional comments'
                             }
@@ -472,7 +459,7 @@ const ApplicantDetail = () => {
                     </div>
 
                     {/* Send Email Checkbox */}
-                    {(formData.overallStatus === 'Reject Candidate' || formData.overallStatus === 'Send for Rectification') && (
+                    {(formData.overallStatus === 'Reject Candidate') && (
                         <div className="checkbox-group">
                             <label className="checkbox-label">
                                 <input
