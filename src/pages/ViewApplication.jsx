@@ -127,6 +127,12 @@ const ViewApplication = () => {
 
                                 <div className="card-content">
                                     <div className="card-details">
+
+                                        <div className="detail-row">
+                                            <span className="detail-label">Application Name:</span>
+                                            <span className="detail-value">{app.name}</span>
+                                        </div>
+
                                         <div className="detail-row">
                                             <span className="detail-label">Taluka:</span>
                                             <span className="detail-value">{app.taluka}</span>
@@ -162,7 +168,7 @@ const ViewApplication = () => {
 
                                     <div className="card-actions">
                                         <button
-                                            className="btn-view-applicants"
+                                            className="apply-btn btn-view-applicants"
                                             onClick={() => handleViewApplicants(app.id, app.allowViewApplicants)}
                                             disabled={!app.allowViewApplicants}
                                         >
@@ -170,7 +176,7 @@ const ViewApplication = () => {
                                         </button>
 
                                         <button
-                                            className={`btn-edit-application ${!app.allowEdit ? 'disabled' : ''}`}
+                                            className={`apply-btn btn-edit-application ${!app.allowEdit ? 'disabled' : ''}`}
                                             onClick={() => handleEditApplication(app.id, app.allowEdit)}
                                             disabled={!app.allowEdit}
                                         >
@@ -178,7 +184,7 @@ const ViewApplication = () => {
                                         </button>
 
                                         <button
-                                            className="btn-view-details"
+                                            className="apply-btn btn-view-details"
                                             onClick={() => handleViewDetails(app.descriptionUrl)}
                                         >
                                             View Details
