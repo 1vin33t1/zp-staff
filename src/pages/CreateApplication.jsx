@@ -196,7 +196,7 @@ const CreateApplication = () => {
         }
 
         if (formData.gramPanchayatList.length === 0) {
-            errors.gramPanchayatList = 'At least one Gram Panchayat is required'
+            errors.gramPanchayatList = 'At least one Gram Panchayat / Ward is required'
         }
 
         if (formData.anganwadiList.length === 0) {
@@ -405,8 +405,6 @@ const CreateApplication = () => {
                     </div>
                 )}
 
-                {errorRetry && <div className="error-message">{errorRetry}</div>}
-
                 <div className="form-container">
                     {errorBreaking && <div className="error-message">{errorBreaking}</div>}
                     {!errorBreaking && <>
@@ -451,7 +449,7 @@ const CreateApplication = () => {
                         {/* Gram Panchayat Selection */}
                         {formData.taluka && (
                             <div className="form-field">
-                                <label>Gram Panchayat * ({formData.gramPanchayatList.length} selected)</label>
+                                <label>Gram Panchayat / Ward * ({formData.gramPanchayatList.length} selected)</label>
                                 {gramPanchayatOptions.length > 0 ? (
                                     renderCheckboxGrid(
                                         gramPanchayatOptions,
@@ -459,7 +457,7 @@ const CreateApplication = () => {
                                         handleGramPanchayatChange
                                     )
                                 ) : (
-                                    <p className="no-options">No Gram Panchayats available for selected Taluka</p>
+                                    <p className="no-options">No Gram Panchayats / Wards available for selected Taluka</p>
                                 )}
                                 {validationErrors.gramPanchayatList && (
                                     <span className="error">{validationErrors.gramPanchayatList}</span>
@@ -573,6 +571,8 @@ const CreateApplication = () => {
                                 <span>Publish on HomePage</span>
                             </label>
                         </div>
+
+                        {errorRetry && <div className="error-message">{errorRetry}</div>}
 
                         {/* Action Buttons */}
                         <div className="form-actions">

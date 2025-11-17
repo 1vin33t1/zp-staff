@@ -241,7 +241,7 @@ const EditApplication = () => {
         }
 
         if (formData.gramPanchayatList.length === 0) {
-            errors.gramPanchayatList = 'At least one Gram Panchayat is required'
+            errors.gramPanchayatList = 'At least one Gram Panchayat / Ward is required'
         }
 
         if (formData.anganwadiList.length === 0) {
@@ -468,7 +468,6 @@ const EditApplication = () => {
                     </div>
                 )}
 
-                {errorRetry && <div className="error-message">{errorRetry}</div>}
                 {errorBreaking && <div className="error-message">{errorBreaking}</div>}
                 {!errorBreaking && <div className="form-container">
                     {/* Name */}
@@ -511,7 +510,7 @@ const EditApplication = () => {
                     {/* Gram Panchayat Selection */}
                     {formData.taluka && (
                         <div className="form-group">
-                            <label>Gram Panchayat * ({formData.gramPanchayatList.length} selected)</label>
+                            <label>Gram Panchayat / Ward * ({formData.gramPanchayatList.length} selected)</label>
                             {gramPanchayatOptions.length > 0 ? (
                                 renderCheckboxGrid(
                                     gramPanchayatOptions,
@@ -519,7 +518,7 @@ const EditApplication = () => {
                                     handleGramPanchayatChange
                                 )
                             ) : (
-                                <p className="no-options">No Gram Panchayats available for selected Taluka</p>
+                                <p className="no-options">No Gram Panchayats / Wards available for selected Taluka</p>
                             )}
                             {validationErrors.gramPanchayatList && (
                                 <span className="error">{validationErrors.gramPanchayatList}</span>
@@ -629,6 +628,9 @@ const EditApplication = () => {
                             <span>Publish on HomePage</span>
                         </label>
                     </div>
+
+                    {errorRetry && <div className="error-message">{errorRetry}</div>}
+
 
                     {/* Action Buttons */}
                     <div className="form-actions">

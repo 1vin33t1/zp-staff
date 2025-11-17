@@ -139,7 +139,7 @@ const ViewApplication = () => {
                                         </div>
 
                                         <div className="detail-row">
-                                            <span className="detail-label">Gram Panchayat:</span>
+                                            <span className="detail-label">Gram Panchayat / Ward:</span>
                                             <span className="detail-value">{app.gramPanchayatList.join(", ")}</span>
                                         </div>
 
