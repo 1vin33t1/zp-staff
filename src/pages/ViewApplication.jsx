@@ -144,11 +144,6 @@ const ViewApplication = () => {
                                         </div>
 
                                         <div className="detail-row">
-                                            <span className="detail-label">Anganwadi:</span>
-                                            <span className="detail-value">{app.anganwadiList.join(", ")}</span>
-                                        </div>
-
-                                        <div className="detail-row">
                                             <span className="detail-label">Start Date:</span>
                                             <span className="detail-value">{formatDate(app.startDate)}</span>
                                         </div>
