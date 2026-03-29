@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import { getStaffUserInfo } from '../lib/authStorage'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
+import PageSuccessState from '../components/ui/PageSuccessState'
+import './StaffProfile.css'
 
 const StaffProfile = () => {
     const navigate = useNavigate()
@@ -163,10 +167,7 @@ const StaffProfile = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading profile...</p>
-                    </div>
+                    <PageLoader message="Loading profile..." />
                 </div>
             </div>
         )
@@ -176,11 +177,10 @@ const StaffProfile = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="success-state">
-                        <div className="success-icon">✓</div>
-                        <h2>Profile Updated Successfully</h2>
-                        <p>Redirecting to dashboard...</p>
-                    </div>
+                    <PageSuccessState
+                        title="Profile Updated Successfully"
+                        description="Redirecting to dashboard..."
+                    />
                 </div>
             </div>
         )
@@ -198,7 +198,7 @@ const StaffProfile = () => {
                     <p className="profile-subtitle">Update your profile information</p>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {/* Profile Form */}
                 <form onSubmit={handleSubmit} className="profile-form">
@@ -282,389 +282,6 @@ const StaffProfile = () => {
                 </form>
 
             </div>
-            <style jsx>{`
-                .profile-container {
-                    max-width: 550px;
-                    margin: 0 auto;
-                    padding: 1.5rem;
-                }
-
-                /* Header */
-                .profile-header {
-                    margin-bottom: 1.5rem;
-                    text-align: center;
-                }
-
-                .profile-header h1 {
-                    color: #1f2937;
-                    font-size: 1.75rem;
-                    font-weight: 700;
-                    margin: 0 0 0.25rem 0;
-                }
-
-                .profile-subtitle {
-                    color: #6b7280;
-                    font-size: 0.9rem;
-                    margin: 0;
-                }
-
-                /* Loading State */
-                .loading-state {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 300px;
-                    gap: 0.75rem;
-                }
-
-                .spinner {
-                    width: 45px;
-                    height: 45px;
-                    border: 4px solid #e5e7eb;
-                    border-top-color: #2e7d32;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                }
-
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-
-                /* Success State */
-                .success-state {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 300px;
-                    gap: 0.75rem;
-                }
-
-                .success-icon {
-                    width: 70px;
-                    height: 70px;
-                    background: #16a34a;
-                    color: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 2.5rem;
-                    animation: scaleIn 0.5s ease;
-                }
-
-                @keyframes scaleIn {
-                    from { transform: scale(0); }
-                    to { transform: scale(1); }
-                }
-
-                .success-state h2 {
-                    color: #16a34a;
-                    margin: 0;
-                    font-size: 1.25rem;
-                }
-
-                .success-state p {
-                    color: #6b7280;
-                    font-size: 0.9rem;
-                    margin: 0;
-                }
-
-                /* Form */
-                .profile-form {
-                    background: white;
-                    padding: 1.5rem;
-                    border-radius: 10px;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                }
-
-                /* Form Row - Inline Layout */
-                .form-row {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 1rem;
-                    margin-bottom: 1.2rem;
-                }
-
-                .form-row:last-of-type:not(.action-buttons) {
-                    margin-bottom: 1rem;
-                }
-
-                .form-item {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.35rem;
-                }
-
-                .form-label {
-                    font-weight: 600;
-                    color: #374151;
-                    font-size: 0.9rem;
-                    white-space: nowrap;
-                    flex-shrink: 0;
-                    padding-top: 0.05rem;
-                }
-
-                .form-label.required::after {
-                    content: ' *';
-                    color: #dc2626;
-                }
-
-                /* Display Fields (Read-only) */
-                .display-field {
-                    padding: 0.7rem 0.75rem;
-                    background: #f3f4f6;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 6px;
-                    color: #374151;
-                    font-weight: 500;
-                    font-size: 0.9rem;
-                    min-height: 38px;
-                    display: flex;
-                    align-items: center;
-                    word-break: break-word;
-                }
-
-                /* Text Input */
-                .form-input {
-                    padding: 0.7rem 0.75rem;
-                    border: 1px solid #d1d5db;
-                    border-radius: 6px;
-                    font-size: 0.9rem;
-                    transition: border-color 0.2s ease;
-                    font-family: inherit;
-                    width: 100%;
-                }
-
-                .form-input:focus {
-                    outline: none;
-                    border-color: #2e7d32;
-                    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
-                }
-
-                .form-input:disabled {
-                    background: #f9fafb;
-                    color: #9ca3af;
-                    cursor: not-allowed;
-                }
-
-                /* Mobile Input Group */
-                .mobile-input-group {
-                    display: flex;
-                    gap: 0;
-                    border: 1px solid #d1d5db;
-                    border-radius: 6px;
-                    overflow: hidden;
-                    transition: border-color 0.2s ease;
-                }
-
-                .mobile-input-group:focus-within {
-                    border-color: #2e7d32;
-                    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
-                }
-
-                .phone-code-section {
-                    display: flex;
-                    align-items: center;
-                    padding: 0.7rem 0.75rem;
-                    background: #f3f4f6;
-                    border-right: 1px solid #e5e7eb;
-                    font-weight: 600;
-                    color: #374151;
-                    font-size: 0.9rem;
-                    white-space: nowrap;
-                    min-width: 48px;
-                    justify-content: center;
-                }
-
-                .mobile-input {
-                    flex: 1;
-                    padding: 0.7rem 0.75rem;
-                    border: none;
-                    font-size: 0.9rem;
-                    font-family: inherit;
-                    background: white;
-                }
-
-                .mobile-input:focus {
-                    outline: none;
-                }
-
-                .mobile-input::placeholder {
-                    color: #9ca3af;
-                }
-
-                .mobile-input:disabled {
-                    background: #f9fafb;
-                    color: #9ca3af;
-                    cursor: not-allowed;
-                }
-
-                /* Character Counter */
-                .char-counter {
-                    margin-top: 0.2rem;
-                    font-size: 0.75rem;
-                    color: #9ca3af;
-                    text-align: right;
-                }
-
-                /* Error Message */
-                .error-message {
-                    padding: 0.75rem;
-                    background: #fee2e2;
-                    border: 1px solid #fca5a5;
-                    color: #991b1b;
-                    border-radius: 6px;
-                    margin-bottom: 1rem;
-                    font-weight: 500;
-                    font-size: 0.9rem;
-                }
-
-                /* Validation Error Popup */
-                .validation-error-popup {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    padding: 0.75rem;
-                    background: #fef2f2;
-                    border: 1px solid #fca5a5;
-                    border-radius: 6px;
-                    margin-bottom: 1rem;
-                    animation: slideDown 0.3s ease;
-                    font-size: 0.85rem;
-                }
-
-                @keyframes slideDown {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-8px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                .error-icon {
-                    font-size: 1rem;
-                    flex-shrink: 0;
-                }
-
-                .validation-error-popup {
-                    color: #991b1b;
-                    font-weight: 500;
-                }
-
-                /* Action Buttons */
-                .action-buttons {
-                    display: flex;
-                    gap: 0.75rem;
-                    margin-top: 1.5rem;
-                    padding-top: 1rem;
-                    border-top: 1px solid #e5e7eb;
-                }
-
-                .action-buttons button {
-                    flex: 1;
-                    padding: 0.8rem;
-                    font-size: 0.95rem;
-                    font-weight: 700;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                }
-
-                .primary-btn {
-                    background: #2e7d32;
-                    color: white;
-                }
-
-                .primary-btn:hover:not(:disabled) {
-                    background: #1b5e20;
-                    transform: translateY(-1px);
-                    box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
-                }
-
-                .primary-btn:disabled {
-                    background: #d1d5db;
-                    color: #9ca3af;
-                    cursor: not-allowed;
-                }
-
-                .secondary-btn {
-                    background: white;
-                    color: #2e7d32;
-                    border: 1.5px solid #2e7d32;
-                }
-
-                .secondary-btn:hover:not(:disabled) {
-                    background: #f0fdf4;
-                    transform: translateY(-1px);
-                }
-
-                .secondary-btn:disabled {
-                    border-color: #d1d5db;
-                    color: #9ca3af;
-                    cursor: not-allowed;
-                }
-
-                /* Responsive */
-                @media (max-width: 768px) {
-                    .profile-container {
-                        padding: 1rem;
-                    }
-
-                    .profile-header h1 {
-                        font-size: 1.5rem;
-                        margin-bottom: 0.5rem;
-                    }
-
-                    .profile-form {
-                        padding: 1.25rem;
-                    }
-
-                    .form-row {
-                        flex-direction: column;
-                        gap: 0.3rem;
-                        margin-bottom: 1rem;
-                    }
-
-                    .form-label {
-                        white-space: normal;
-                    }
-
-                    .action-buttons {
-                        flex-direction: column;
-                        gap: 0.5rem;
-                        margin-top: 1rem;
-                        padding-top: 1rem;
-                    }
-
-                    .action-buttons button {
-                        padding: 0.75rem;
-                    }
-                }
-
-                /* Page Container */
-                .page-container {
-                    min-height: 100vh;
-                    background: linear-gradient(135deg, #fafaf9 0%, #f0fdf4 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 1rem;
-                }
-
-                .page-content {
-                    width: 100%;
-                }
-
-            `
-            }
-            </style>
         </div>
     )
 }

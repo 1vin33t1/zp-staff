@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson, toAbsoluteFileUrl } from '../lib/api'
+import ConfirmModal from '../components/ui/ConfirmModal'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
+import PageSuccessState from '../components/ui/PageSuccessState'
 import './ApplicantDetail.css'
 
 const ApplicantDetail = () => {
@@ -241,10 +245,7 @@ const ApplicantDetail = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading applicant data...</p>
-                    </div>
+                    <PageLoader message="Loading applicant data..." />
                 </div>
             </div>
         )
@@ -254,11 +255,10 @@ const ApplicantDetail = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="success-state">
-                        <div className="success-icon-large">✓</div>
-                        <h2>Verification Successfully Submitted</h2>
-                        <p>Redirecting to applicants list...</p>
-                    </div>
+                    <PageSuccessState
+                        title="Verification Successfully Submitted"
+                        description="Redirecting to applicants list..."
+                    />
                 </div>
             </div>
         )
@@ -289,7 +289,7 @@ const ApplicantDetail = () => {
 
                 <div className="divider"></div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {/* Rows */}
                 <div className="rows-container">
@@ -491,37 +491,25 @@ const ApplicantDetail = () => {
                 </div>
 
                 {/* Disclaimer Modal */}
-                {showDisclaimer && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
-                            <h3>Confirm Verification Submission</h3>
-                            <p>Please recheck all the data before submitting the verification. This action will update the applicant's status and cannot be easily reversed.</p>
-                            <div className="disclaimer-details">
-                                <p><strong>Overall Status:</strong> {formData.overallStatus}</p>
-                                {formData.overallStatusComment && (
-                                    <p><strong>Comment:</strong> {formData.overallStatusComment}</p>
-                                )}
-                                {formData.sendEmail && (
-                                    <p><strong>Email:</strong> Will be sent to applicant</p>
-                                )}
-                            </div>
-                            <div className="modal-actions">
-                                <button
-                                    className="secondary-btn"
-                                    onClick={() => setShowDisclaimer(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="primary-btn"
-                                    onClick={handleConfirmSubmit}
-                                >
-                                    Confirm & Submit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <ConfirmModal
+                    isOpen={showDisclaimer}
+                    title="Confirm Verification Submission"
+                    description="Please recheck all the data before submitting the verification. This action will update the applicant's status and cannot be easily reversed."
+                    details={(
+                        <>
+                            <p><strong>Overall Status:</strong> {formData.overallStatus}</p>
+                            {formData.overallStatusComment && (
+                                <p><strong>Comment:</strong> {formData.overallStatusComment}</p>
+                            )}
+                            {formData.sendEmail && (
+                                <p><strong>Email:</strong> Will be sent to applicant</p>
+                            )}
+                        </>
+                    )}
+                    confirmLabel="Confirm & Submit"
+                    onCancel={() => setShowDisclaimer(false)}
+                    onConfirm={handleConfirmSubmit}
+                />
             </div>
         </div>
     )

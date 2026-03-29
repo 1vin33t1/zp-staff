@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson, uploadPublicFile } from '../lib/api'
+import ConfirmModal from '../components/ui/ConfirmModal'
+import EmptyState from '../components/ui/EmptyState'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
+import PageSuccessState from '../components/ui/PageSuccessState'
 import './PublishMerit.css'
 
 const PublishMerit = () => {
@@ -243,10 +248,7 @@ const PublishMerit = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading eligible candidates...</p>
-                    </div>
+                    <PageLoader message="Loading eligible candidates..." />
                 </div>
             </div>
         )
@@ -256,11 +258,10 @@ const PublishMerit = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="success-state">
-                        <div className="success-icon-large">✓</div>
-                        <h2>Merit List Successfully Published</h2>
-                        <p>Redirecting to dashboard...</p>
-                    </div>
+                    <PageSuccessState
+                        title="Merit List Successfully Published"
+                        description="Redirecting to dashboard..."
+                    />
                 </div>
             </div>
         )
@@ -282,7 +283,7 @@ const PublishMerit = () => {
                     </div>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {/* Results count */}
                 <div className="results-info">
@@ -321,10 +322,13 @@ const PublishMerit = () => {
 
                 {/* Table */}
                 {sortedCandidates.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">👥</div>
-                        <p>No {stage === 'upload' ? 'selected' : 'eligible'} candidates found</p>
-                    </div>
+                    <EmptyState
+                        icon="👥"
+                        title={`No ${stage === 'upload' ? 'selected' : 'eligible'} candidates found`}
+                        description={stage === 'upload'
+                            ? 'Go back to the selection step and choose candidates to continue.'
+                            : 'Eligible candidates will appear here once the application reaches the required stage.'}
+                    />
                 ) : (
                     <>
                         <div className="table-container">
@@ -463,30 +467,25 @@ const PublishMerit = () => {
                 </div>
 
                 {/* Disclaimer Modal */}
-                {showDisclaimer && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
-                            <h3>⚠️ Confirm Merit List Publication</h3>
-                            <div className="disclaimer-text">
-                                <p><strong>Important:</strong> After successful merit publication:</p>
-                                <ul>
-                                    <li>✉️ Letters will be sent to all selected applicants</li>
-                                    <li>📋 Merit list will be displayed on the applicants' home page</li>
-                                    <li>🚫 <strong>This action CANNOT be reversed once published</strong></li>
-                                </ul>
-                                <p>Please verify all information carefully before proceeding.</p>
-                            </div>
-                            <div className="modal-actions">
-                                <button className="secondary-btn" onClick={() => setShowDisclaimer(false)}>
-                                    Cancel
-                                </button>
-                                <button className="danger-btn" onClick={handleConfirmPublish}>
-                                    Yes, Publish Merit List
-                                </button>
-                            </div>
+                <ConfirmModal
+                    isOpen={showDisclaimer}
+                    title="Confirm Merit List Publication"
+                    description="Please verify all information carefully before proceeding."
+                    details={(
+                        <div className="disclaimer-text">
+                            <p><strong>Important:</strong> After successful merit publication:</p>
+                            <ul>
+                                <li>Letters will be sent to all selected applicants.</li>
+                                <li>Merit list will be displayed on the applicants' home page.</li>
+                                <li><strong>This action cannot be reversed once published.</strong></li>
+                            </ul>
                         </div>
-                    </div>
-                )}
+                    )}
+                    confirmLabel="Yes, Publish Merit List"
+                    confirmButtonClassName="danger-btn"
+                    onCancel={() => setShowDisclaimer(false)}
+                    onConfirm={handleConfirmPublish}
+                />
             </div>
         </div>
     )

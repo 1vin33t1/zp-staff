@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
+import { formatDateDisplay } from '../lib/date'
+import { naturalSort } from '../lib/sort'
+import EmptyState from '../components/ui/EmptyState'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
 import './ViewApplication.css'
 
 const ViewApplication = () => {
@@ -35,15 +40,6 @@ const ViewApplication = () => {
         }
     }
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        })
-    }
-
     const getStatusColor = (status) => {
         switch (status.toLowerCase()) {
             case 'open':
@@ -58,11 +54,6 @@ const ViewApplication = () => {
                 return 'status-default'
         }
     }
-
-    const naturalSort = new Intl.Collator(undefined, {
-        numeric: true,
-        sensitivity: 'base'
-    }).compare
 
     const talukaOptions = [...new Set(applications.map(app => app.taluka).filter(Boolean))]
         .sort(naturalSort)
@@ -106,10 +97,7 @@ const ViewApplication = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading applications...</p>
-                    </div>
+                    <PageLoader message="Loading applications..." />
                 </div>
             </div>
         )
@@ -123,7 +111,7 @@ const ViewApplication = () => {
                     <p>View and manage all application submissions</p>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {applications.length > 0 && (
                     <div className="filters-section">
@@ -181,18 +169,23 @@ const ViewApplication = () => {
                 )}
 
                 {filteredApplications.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">📋</div>
-                        <p>{applications.length === 0 ? 'No applications found' : 'No applications match the selected filters'}</p>
-                        {applications.length === 0 && (
+                    <EmptyState
+                        icon="📋"
+                        title={applications.length === 0 ? 'No applications found' : 'No matching applications'}
+                        description={
+                            applications.length === 0
+                                ? 'Create a new application to get started.'
+                                : 'Adjust the selected filters to see more applications.'
+                        }
+                        actions={applications.length === 0 ? (
                             <button
                                 className="primary-btn"
                                 onClick={() => navigate('/zp-staff/create-application')}
                             >
                                 Create New Application
                             </button>
-                        )}
-                    </div>
+                        ) : null}
+                    />
                 ) : (
                     <div className="applications-list">
                         {filteredApplications.map((app) => (
@@ -232,12 +225,12 @@ const ViewApplication = () => {
 
                                         <div className="detail-row">
                                             <span className="detail-label">Start Date:</span>
-                                            <span className="detail-value">{formatDate(app.startDate)}</span>
+                                            <span className="detail-value">{formatDateDisplay(app.startDate)}</span>
                                         </div>
 
                                         <div className="detail-row">
                                             <span className="detail-label">End Date:</span>
-                                            <span className="detail-value">{formatDate(app.endDate)}</span>
+                                            <span className="detail-value">{formatDateDisplay(app.endDate)}</span>
                                         </div>
 
                                         <div className="detail-row">

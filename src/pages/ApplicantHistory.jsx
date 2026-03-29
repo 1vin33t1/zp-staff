@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
+import EmptyState from '../components/ui/EmptyState'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
 import './ApplicantHistory.css'
 
 const ApplicantHistory = () => {
@@ -70,10 +73,7 @@ const ApplicantHistory = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading activity history...</p>
-                    </div>
+                    <PageLoader message="Loading activity history..." />
                 </div>
             </div>
         )
@@ -94,7 +94,7 @@ const ApplicantHistory = () => {
                     </div>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {/* Search Bar */}
                 <div className="search-section">
@@ -123,22 +123,18 @@ const ApplicantHistory = () => {
                 {/* Activity Stream */}
                 <div className="activity-stream">
                     {filteredData.length === 0 ? (
-                        <div className="empty-state">
-                            {searchQuery ? (
-                                <>
-                                    <div className="empty-icon">🔍</div>
-                                    <p>No results found for "{searchQuery}"</p>
-                                    <button className="secondary-btn" onClick={clearSearch}>
-                                        Clear Search
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="empty-icon">📋</div>
-                                    <p>No activity history available</p>
-                                </>
-                            )}
-                        </div>
+                        <EmptyState
+                            icon={searchQuery ? '🔍' : '📋'}
+                            title={searchQuery ? 'No search results' : 'No activity history available'}
+                            description={searchQuery
+                                ? `No results found for "${searchQuery}".`
+                                : 'Activity entries will appear here when applicant actions are recorded.'}
+                            actions={searchQuery ? (
+                                <button className="secondary-btn" onClick={clearSearch}>
+                                    Clear Search
+                                </button>
+                            ) : null}
+                        />
                     ) : (
                         <div className="message-list">
                             {filteredData.map((message, index) => (

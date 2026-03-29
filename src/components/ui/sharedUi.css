@@ -1,0 +1,134 @@
+.inline-message {
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.inline-message--error {
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+
+.inline-message--success {
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+}
+
+.shared-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    min-height: 300px;
+    text-align: center;
+    padding: 2rem;
+}
+
+.shared-state__icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    opacity: 0.85;
+}
+
+.shared-state__title {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.shared-state__description {
+    margin: 0;
+    color: #6b7280;
+    max-width: 560px;
+}
+
+.shared-state__actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.shared-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #2e7d32;
+    border-radius: 50%;
+    animation: shared-spin 1s linear infinite;
+}
+
+.confirm-modal__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.confirm-modal {
+    width: min(100%, 520px);
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+}
+
+.confirm-modal__title {
+    margin: 0 0 0.75rem;
+    color: #111827;
+    font-size: 1.35rem;
+}
+
+.confirm-modal__description {
+    margin: 0;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.confirm-modal__details {
+    margin-top: 1rem;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.confirm-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+@keyframes shared-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .shared-state {
+        min-height: 240px;
+        padding: 1.5rem;
+    }
+
+    .confirm-modal {
+        padding: 1.5rem;
+    }
+
+    .confirm-modal__actions {
+        flex-direction: column;
+    }
+
+    .confirm-modal__actions button {
+        width: 100%;
+    }
+}

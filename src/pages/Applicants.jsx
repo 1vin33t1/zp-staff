@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
+import { naturalSort } from '../lib/sort'
+import EmptyState from '../components/ui/EmptyState'
+import InlineMessage from '../components/ui/InlineMessage'
+import PageLoader from '../components/ui/PageLoader'
 import './Applicants.css'
 
 const Applicants = () => {
@@ -33,11 +37,6 @@ const Applicants = () => {
     useEffect(() => {
         applyFiltersAndSort()
     }, [applicants, villageFilter, statusFilter, sortColumn, sortDirection])
-
-    const naturalSort = new Intl.Collator(undefined, {
-        numeric: true,
-        sensitivity: 'base'
-    }).compare
 
     const fetchApplicants = async () => {
         try {
@@ -154,10 +153,7 @@ const Applicants = () => {
         return (
             <div className="page-container">
                 <div className="page-content">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading applicants...</p>
-                    </div>
+                    <PageLoader message="Loading applicants..." />
                 </div>
             </div>
         )
@@ -171,7 +167,7 @@ const Applicants = () => {
                     <p className="application-id">Application ID: <strong>{applicationId}</strong></p>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <InlineMessage>{error}</InlineMessage>
 
                 {/* Filters */}
                 <div className="filters-section">
@@ -225,10 +221,11 @@ const Applicants = () => {
 
                 {/* Table */}
                 {filteredApplicants.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">👥</div>
-                        <p>No applicants found</p>
-                    </div>
+                    <EmptyState
+                        icon="👥"
+                        title="No applicants found"
+                        description="Try changing the selected filters or check back after more applications are submitted."
+                    />
                 ) : (
                     <>
                         <div className="table-container">
