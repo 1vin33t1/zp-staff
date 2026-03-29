@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { fetchJson } from '../lib/api'
+import { setStaffLastActivity, setStaffLastRefresh, setStaffUserInfo } from '../lib/authStorage'
 import './LoginPage.css'
 
 const LoginPage = ({ onLogin }) => {
@@ -49,11 +51,9 @@ const LoginPage = ({ onLogin }) => {
         setEmailError('')
 
         try {
-            const response = await fetch(`https://api.gramsamruddhi.in/auth/send-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}`, {
+            const data = await fetchJson(`/auth/send-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}`, {
                 method: 'POST'
             })
-
-            const data = await response.json()
 
             if (data.success) {
                 setStep('otp')
@@ -85,17 +85,16 @@ const LoginPage = ({ onLogin }) => {
         setError('')
 
         try {
-            const response = await fetch(`https://api.gramsamruddhi.in/auth/verify-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}&otp=${otpValue}`, {
+            const data = await fetchJson(`/auth/verify-otp?role=ZP_STAFF&email=${encodeURIComponent(email)}&otp=${otpValue}`, {
                 method: 'POST',
                 credentials: 'include'
             })
-
-            const data = await response.json()
             if (data.verified) {
-                localStorage.setItem('staffLastActivity', new Date().toISOString());
-                localStorage.setItem('staffLastRefresh', new Date().toISOString())
-                if (data.meta)
-                    localStorage.setItem('staffUserInfo', JSON.stringify(data.meta));
+                setStaffLastActivity()
+                setStaffLastRefresh()
+                if (data.meta) {
+                    setStaffUserInfo(data.meta)
+                }
                 onLogin(email, data.accessToken)
             } else {
                 setError(data.failureReason || 'Invalid OTP')

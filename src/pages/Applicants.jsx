@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson } from '../lib/api'
 import './Applicants.css'
 
 const Applicants = () => {
@@ -39,17 +40,11 @@ const Applicants = () => {
     }).compare
 
     const fetchApplicants = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch(`https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants`, {
+            const data = await fetchJson(`/zp-staff/${applicationId}/applicants`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: createAuthHeaders(),
             })
-
-            const data = await response.json()
 
             if (data.result && data.data) {
                 setApplicants(data.data.applicants || [])

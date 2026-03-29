@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson } from '../lib/api'
+import { getStaffUserInfo } from '../lib/authStorage'
 
 const StaffProfile = () => {
     const navigate = useNavigate()
@@ -29,19 +31,12 @@ const StaffProfile = () => {
     }, [])
 
     const fetchProfile = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/profile', {
+            const data = await fetchJson('/zp-staff/profile', {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: createAuthHeaders(),
             })
-
-            const data = await response.json()
-            const storedData = localStorage.getItem('staffUserInfo');
-            const userData = JSON.parse(storedData);
+            const userData = getStaffUserInfo() || {}
 
             if (data.result && data.data) {
                 setProfileData({
@@ -123,24 +118,19 @@ const StaffProfile = () => {
         setSubmitting(true)
         setError('')
 
-        const token = localStorage.getItem('staffAccessToken')
-
         const payload = {
             phoneCode: formData.phoneCode,
             mobile: formData.mobile
         }
 
         try {
-            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/profile', {
+            const data = await fetchJson('/zp-staff/profile', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
+                headers: createAuthHeaders({
                     'Content-Type': 'application/json'
-                },
+                }),
                 body: JSON.stringify(payload)
             })
-
-            const data = await response.json()
 
             if (data.result && data.data && data.data === "success") {
                 setSubmitSuccess(true)

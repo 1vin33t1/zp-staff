@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getStaffUserInfo } from '../lib/authStorage'
 import './TopBar.css'
 
 const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => {
@@ -26,10 +27,9 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
 
     const getDisplayEmail = () => {
         if (!userEmail) return ''
-        const storedData = localStorage.getItem('staffUserInfo');
-        if (storedData) {
-            const userData = JSON.parse(storedData);
-            return userData.name ? userData.name : userEmail.split('@')[0];
+        const userData = getStaffUserInfo()
+        if (userData) {
+            return userData.name ? userData.name : userEmail.split('@')[0]
         }
         return userEmail.split('@')[0]
     }

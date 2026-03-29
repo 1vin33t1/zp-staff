@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson, uploadPublicFile } from '../lib/api'
 import './PublishMerit.css'
 
 const PublishMerit = () => {
@@ -38,20 +39,14 @@ const PublishMerit = () => {
     }, [applicationId])
 
     const fetchEligibleCandidates = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch(
-                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/eligible-candidates`,
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/eligible-candidates`,
                 {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
+                    headers: createAuthHeaders(),
+                },
             )
-
-            const data = await response.json()
 
             if (data.result && data.data) {
                 setCandidates(data.data.applicants || [])
@@ -147,36 +142,26 @@ const PublishMerit = () => {
     }
 
     const handleFileUpload = async (file, type, userId = null) => {
-        const token = localStorage.getItem('staffAccessToken')
+        if (!file) {
+            return
+        }
 
         if (type === 'meritList') {
             setUploadingMeritList(true)
         } else {
-            setUploadingLetter({ ...uploadingLetter, [userId]: true })
+            setUploadingLetter((previousValue) => ({ ...previousValue, [userId]: true }))
         }
 
         try {
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('https://api.gramsamruddhi.in/upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'X-Bucket-Name': 'public'
-                },
-                body: formData
-            })
-
-            const data = await response.json()
+            const data = await uploadPublicFile(file)
 
             if (data.result && data.data) {
                 if (type === 'meritList') {
                     setMeritListAsset(data.data)
                     setOrigMeritListAsset(file.name)
                 } else {
-                    setLetterAssets({ ...letterAssets, [userId]: data.data })
-                    setOrigLetterAssets({ ...letterAssets, [userId]: file.name })
+                    setLetterAssets((previousValue) => ({ ...previousValue, [userId]: data.data }))
+                    setOrigLetterAssets((previousValue) => ({ ...previousValue, [userId]: file.name }))
                 }
             } else {
                 throw new Error('Upload failed')
@@ -187,7 +172,7 @@ const PublishMerit = () => {
             if (type === 'meritList') {
                 setUploadingMeritList(false)
             } else {
-                setUploadingLetter({ ...uploadingLetter, [userId]: false })
+                setUploadingLetter((previousValue) => ({ ...previousValue, [userId]: false }))
             }
         }
     }
@@ -213,8 +198,6 @@ const PublishMerit = () => {
         setPublishing(true)
         setError('')
 
-        const token = localStorage.getItem('staffAccessToken')
-
         const meritUsers = Array.from(selectedCandidates).map(userId => {
             const candidate = candidates.find(c => c.id === userId)
             return {
@@ -231,19 +214,16 @@ const PublishMerit = () => {
         }
 
         try {
-            const response = await fetch(
-                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/publish-merit-list`,
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/publish-merit-list`,
                 {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
+                    headers: createAuthHeaders({
                         'Content-Type': 'application/json'
-                    },
+                    }),
                     body: JSON.stringify(payload)
-                }
+                },
             )
-
-            const data = await response.json()
 
             if (data.result && data.data === 'success') {
                 setPublishSuccess(true)

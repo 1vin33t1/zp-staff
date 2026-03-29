@@ -1,17 +1,33 @@
-import {Navigate, Route, Routes, useNavigate} from 'react-router-dom'
-import {useEffect, useRef, useState} from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
 import TopBar from './components/TopBar'
-import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard'
-import CreateApplication from './pages/CreateApplication'
-import ViewApplication from './pages/ViewApplication'
-import Profile from './pages/StaffProfile.jsx'
-import Applicants from './pages/Applicants'
-import EditApplication from './pages/EditApplication'
+import { apiUrl, fetchJson } from './lib/api'
+import {
+    clearStaffSession,
+    getStaffAccessToken,
+    getStaffLastActivity,
+    getStaffLastRefresh,
+    getStaffUserEmail,
+    setStaffAccessToken,
+    setStaffLastActivity,
+    setStaffLastRefresh,
+    setStaffUserEmail,
+    setStaffUserInfo,
+} from './lib/authStorage'
 import ApplicantDetail from './pages/ApplicantDetail'
-import PublishMerit from './pages/PublishMerit'
 import ApplicantHistory from './pages/ApplicantHistory'
+import Applicants from './pages/Applicants'
+import CreateApplication from './pages/CreateApplication'
+import Dashboard from './pages/Dashboard'
+import EditApplication from './pages/EditApplication'
+import LoginPage from './pages/LoginPage'
+import Profile from './pages/StaffProfile.jsx'
+import PublishMerit from './pages/PublishMerit'
+import ViewApplication from './pages/ViewApplication'
 import './App.css'
+
+const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -21,48 +37,64 @@ function App() {
     const refreshTimerRef = useRef(null)
 
     useEffect(() => {
-        const lastActivityString = localStorage.getItem('staffLastActivity');
+        const lastActivityString = getStaffLastActivity()
         if (!lastActivityString) {
-            handleLogout(true);
-            return;
+            handleLogout(true)
+            return undefined
         }
 
-        const lastActivity = new Date(lastActivityString);
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const lastActivity = new Date(lastActivityString)
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000)
 
         if (lastActivity < fifteenMinutesAgo) {
-            handleLogout(true);
-            return;
+            handleLogout(true)
+            return undefined
         }
 
-        const token = localStorage.getItem('staffAccessToken');
-        const email = localStorage.getItem('staffUserEmail');
+        const token = getStaffAccessToken()
+        const email = getStaffUserEmail()
 
-        if (token && email) {
-            setIsAuthenticated(true);
-            setUserEmail(email);
-            startActivityMonitoring();
-        } else {
-            handleLogout(true);
+        if (!token || !email) {
+            handleLogout(true)
+            return undefined
         }
 
-        let lastRefreshString = localStorage.getItem('staffLastRefresh');
+        setIsAuthenticated(true)
+        setUserEmail(email)
+        startActivityMonitoring()
+
+        let lastRefreshString = getStaffLastRefresh()
         if (!lastRefreshString) {
-            localStorage.setItem('staffLastRefresh', new Date().toISOString());
+            setStaffLastRefresh()
             lastRefreshString = new Date(Date.now() - 5 * 60 * 1000).toISOString()
         }
 
-        const lastRefresh = new Date(lastRefreshString);
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+        const lastRefresh = new Date(lastRefreshString)
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
 
-        return startTokenRefresh(lastRefresh < twoMinutesAgo);
-    }, []);
+        return startTokenRefresh(lastRefresh < twoMinutesAgo)
+    }, [])
 
+    const stopActivityMonitoring = () => {
+        ACTIVITY_EVENTS.forEach((eventName) => {
+            document.removeEventListener(eventName, resetActivityTimer)
+        })
 
-    // Monitor user activity
+        if (inactivityTimerRef.current) {
+            clearTimeout(inactivityTimerRef.current)
+            inactivityTimerRef.current = null
+        }
+    }
+
+    const stopTokenRefresh = () => {
+        if (refreshTimerRef.current) {
+            clearInterval(refreshTimerRef.current)
+            refreshTimerRef.current = null
+        }
+    }
+
     const resetActivityTimer = () => {
-        // Retrieve the last activity time from localStorage
-        localStorage.setItem('staffLastActivity', new Date().toISOString());
+        setStaffLastActivity()
 
         if (inactivityTimerRef.current) {
             clearTimeout(inactivityTimerRef.current)
@@ -70,73 +102,64 @@ function App() {
 
         inactivityTimerRef.current = setTimeout(() => {
             handleLogout(true)
-        }, 15 * 60 * 1000) // 15 minutes
+        }, 15 * 60 * 1000)
     }
 
     const startActivityMonitoring = () => {
-        const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+        stopActivityMonitoring()
 
-        events.forEach(event => {
-            document.addEventListener(event, resetActivityTimer)
+        ACTIVITY_EVENTS.forEach((eventName) => {
+            document.addEventListener(eventName, resetActivityTimer)
         })
 
         resetActivityTimer()
 
         return () => {
-            events.forEach(event => {
-                document.removeEventListener(event, resetActivityTimer)
-            })
-            if (inactivityTimerRef.current) {
-                clearTimeout(inactivityTimerRef.current)
-            }
+            stopActivityMonitoring()
         }
     }
 
-    // Auto-refresh token every 5 minutes
     const startTokenRefresh = (hitApiImmediately = false) => {
         const refreshToken = async () => {
             try {
-                const response = await fetch('https://api.gramsamruddhi.in/auth/refresh/zp-staff', {
+                const data = await fetchJson('/auth/refresh/zp-staff', {
                     method: 'POST',
-                    credentials: 'include'
-                });
-
-                const data = await response.json();
+                    credentials: 'include',
+                })
 
                 if (data.accessToken) {
-                    localStorage.setItem('staffLastActivity', new Date().toISOString());
-                    localStorage.setItem('staffAccessToken', data.accessToken);
-                    localStorage.setItem('staffUserEmail', data.user);
-                    localStorage.setItem('staffLastRefresh', new Date().toISOString());
-                    if (data.meta)
-                        localStorage.setItem('staffUserInfo', JSON.stringify(data.meta));
+                    setStaffLastActivity()
+                    setStaffAccessToken(data.accessToken)
+                    setStaffUserEmail(data.user)
+                    setStaffLastRefresh()
+
+                    if (data.meta) {
+                        setStaffUserInfo(data.meta)
+                    }
                 } else {
-                    handleLogout(false);
+                    handleLogout(false)
                 }
             } catch (error) {
-                console.error('Token refresh failed:', error);
+                console.error('Token refresh failed:', error)
             }
         }
 
         if (hitApiImmediately) {
-            refreshToken();
+            refreshToken()
         }
 
         if (!refreshTimerRef.current) {
-            refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000);
+            refreshTimerRef.current = setInterval(refreshToken, 5 * 60 * 1000)
         }
 
         return () => {
-            if (refreshTimerRef.current) {
-                clearInterval(refreshTimerRef.current);
-            }
+            stopTokenRefresh()
         }
     }
 
-
     const handleLogin = (email, accessToken) => {
-        localStorage.setItem('staffAccessToken', accessToken)
-        localStorage.setItem('staffUserEmail', email)
+        setStaffAccessToken(accessToken)
+        setStaffUserEmail(email)
         setIsAuthenticated(true)
         setUserEmail(email)
         startActivityMonitoring()
@@ -147,38 +170,45 @@ function App() {
     const handleLogout = async (callApi = true) => {
         if (callApi) {
             try {
-                await fetch('https://api.gramsamruddhi.in/auth/logout/zp-staff', {
+                await fetch(apiUrl('/auth/logout/zp-staff'), {
                     method: 'POST',
-                    credentials: 'include'
+                    credentials: 'include',
                 })
             } catch (error) {
                 console.error('Logout API error:', error)
             }
         }
-        localStorage.clear()
+
+        clearStaffSession()
         setIsAuthenticated(false)
         setUserEmail(null)
-
-        if (inactivityTimerRef.current) {
-            clearTimeout(inactivityTimerRef.current)
-        }
-        if (refreshTimerRef.current) {
-            clearInterval(refreshTimerRef.current)
-        }
-
+        stopActivityMonitoring()
+        stopTokenRefresh()
         navigate('/zp-staff')
     }
 
     const getInactivityTime = () => {
-        const lastActivityString = localStorage.getItem('staffLastActivity');
+        const lastActivityString = getStaffLastActivity()
+
         if (isAuthenticated && !lastActivityString) {
             handleLogout(true)
-            return true
+            return 0
         }
-        const lastActivityDate = new Date(lastActivityString);
 
-        return Date.now() - lastActivityDate
+        return Date.now() - new Date(lastActivityString)
     }
+
+    const protectedRoutes = [
+        { path: '/zp-staff/dashboard', element: <Dashboard /> },
+        { path: '/zp-staff/create-application', element: <CreateApplication /> },
+        { path: '/zp-staff/view-application', element: <ViewApplication /> },
+        { path: '/zp-staff/profile', element: <Profile /> },
+        { path: '/zp-staff/:applicationId/applicants', element: <Applicants /> },
+        { path: '/zp-staff/:applicationId/edit', element: <EditApplication /> },
+        { path: '/zp-staff/:applicationId/applicants/:applicantId', element: <ApplicantDetail /> },
+        { path: '/zp-staff/:applicationId/publish-merit', element: <PublishMerit /> },
+        { path: '/zp-staff/:applicationId/applicants/:applicantId/history', element: <ApplicantHistory /> },
+    ]
 
     return (
         <div className="app">
@@ -193,89 +223,23 @@ function App() {
                     <Route
                         path="/zp-staff"
                         element={
-                            isAuthenticated ?
-                                <Navigate to="/zp-staff/dashboard" replace/> :
-                                <LoginPage onLogin={handleLogin}/>
+                            isAuthenticated
+                                ? <Navigate to="/zp-staff/dashboard" replace />
+                                : <LoginPage onLogin={handleLogin} />
                         }
                     />
-                    <Route
-                        path="/zp-staff/dashboard"
-                        element={
-                            isAuthenticated ?
-                                <Dashboard/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-                    <Route
-                        path="/zp-staff/create-application"
-                        element={
-                            isAuthenticated ?
-                                <CreateApplication/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-                    <Route
-                        path="/zp-staff/view-application"
-                        element={
-                            isAuthenticated ?
-                                <ViewApplication/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-                    <Route
-                        path="/zp-staff/profile"
-                        element={
-                            isAuthenticated ?
-                                <Profile/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-                    <Route
-                        path="/zp-staff/:applicationId/applicants"
-                        element={
-                            isAuthenticated ?
-                                <Applicants/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-                    <Route
-                        path="/zp-staff/:applicationId/edit"
-                        element={
-                            isAuthenticated ?
-                                <EditApplication/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-
-                    <Route
-                        path="/zp-staff/:applicationId/applicants/:applicantId"
-                        element={
-                            isAuthenticated ?
-                                <ApplicantDetail/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-
-                    <Route
-                        path="/zp-staff/:applicationId/publish-merit"
-                        element={
-                            isAuthenticated ?
-                                <PublishMerit/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-
-                    <Route
-                        path="/zp-staff/:applicationId/applicants/:applicantId/history"
-                        element={
-                            isAuthenticated ?
-                                <ApplicantHistory/> :
-                                <Navigate to="/zp-staff" replace/>
-                        }
-                    />
-
-
-                    <Route path="/" element={<Navigate to="/zp-staff" replace/>}/>
+                    {protectedRoutes.map((route) => (
+                        <Route
+                            key={route.path}
+                            path={route.path}
+                            element={
+                                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                                    {route.element}
+                                </ProtectedRoute>
+                            }
+                        />
+                    ))}
+                    <Route path="/" element={<Navigate to="/zp-staff" replace />} />
                 </Routes>
             </main>
         </div>

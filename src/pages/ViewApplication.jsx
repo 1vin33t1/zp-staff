@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson } from '../lib/api'
 import './ViewApplication.css'
 
 const ViewApplication = () => {
@@ -16,17 +17,11 @@ const ViewApplication = () => {
     }, [])
 
     const fetchApplications = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch('https://api.gramsamruddhi.in/zp-staff/applications', {
+            const data = await fetchJson('/zp-staff/applications', {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: createAuthHeaders(),
             })
-
-            const data = await response.json()
 
             if (data.result && data.data && data.data.applicationList) {
                 setApplications(data.data.applicationList)

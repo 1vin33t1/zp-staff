@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson } from '../lib/api'
 import './ApplicantHistory.css'
 
 const ApplicantHistory = () => {
@@ -22,20 +23,14 @@ const ApplicantHistory = () => {
     }, [searchQuery, historyData])
 
     const fetchHistory = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch(
-                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
                 {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
+                    headers: createAuthHeaders(),
+                },
             )
-
-            const data = await response.json()
 
             if (data.result && data.data) {
                 setHistoryData(data.data)

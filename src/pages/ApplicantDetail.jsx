@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { createAuthHeaders, fetchJson, toAbsoluteFileUrl } from '../lib/api'
 import './ApplicantDetail.css'
 
 const ApplicantDetail = () => {
@@ -27,20 +28,14 @@ const ApplicantDetail = () => {
     }, [applicationId, applicantId])
 
     const fetchApplicantData = async () => {
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch(
-                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
                 {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
+                    headers: createAuthHeaders(),
+                },
             )
-
-            const data = await response.json()
 
             if (data.result && data.data) {
                 setFormData({
@@ -177,22 +172,17 @@ const ApplicantDetail = () => {
         setSubmitting(true)
         setError('')
 
-        const token = localStorage.getItem('staffAccessToken')
-
         try {
-            const response = await fetch(
-                `https://api.gramsamruddhi.in/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}`,
                 {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
+                    headers: createAuthHeaders({
                         'Content-Type': 'application/json'
-                    },
+                    }),
                     body: JSON.stringify(formData)
-                }
+                },
             )
-
-            const data = await response.json()
 
             if (data.result && data.data === 'success') {
                 setSubmitSuccess(true)
@@ -244,12 +234,7 @@ const ApplicantDetail = () => {
     }
 
     const getDocumentUrl = (url) => {
-        if (!url) return ''
-        // Add prefix if not already present
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            return url
-        }
-        return `https://files.gramsamruddhi.in/${url}`
+        return toAbsoluteFileUrl(url)
     }
 
     if (loading) {
