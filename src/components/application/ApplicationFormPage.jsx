@@ -623,6 +623,7 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                     <FileUploadField
                         id={`${mode}-banner-file`}
                         label="Banner"
+                        accept={"image/*"}
                         value={formData.banner}
                         isUploading={uploadingFields.banner}
                         isDisabled={submitting}
