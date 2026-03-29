@@ -20,6 +20,7 @@ const EditApplication = () => {
         anganwadiList: [],
         banner: '',
         description: '',
+        selfDeclarationForm: '',
         startDate: '',
         endDate: '',
         publish: false
@@ -35,6 +36,7 @@ const EditApplication = () => {
 
     const [uploadingBanner, setUploadingBanner] = useState(false)
     const [uploadingDescription, setUploadingDescription] = useState(false)
+    const [uploadingSelfDeclaration, setUploadingSelfDeclaration] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [showDisclaimer, setShowDisclaimer] = useState(false)
     const [submitSuccess, setSubmitSuccess] = useState(false)
@@ -241,7 +243,7 @@ const EditApplication = () => {
         }
 
         if (formData.gramPanchayatList.length === 0) {
-            errors.gramPanchayatList = 'At least one Gram Panchayat / Ward is required'
+            errors.gramPanchayatList = 'At least one Gram Panchayat is required'
         }
 
         if (formData.anganwadiList.length === 0) {
@@ -254,6 +256,10 @@ const EditApplication = () => {
 
         if (!formData.description) {
             errors.description = 'Description is required'
+        }
+
+        if (!formData.selfDeclarationForm) {
+            errors.selfDeclarationForm = 'Self declaration form is required'
         }
 
         if (!formData.startDate) {
@@ -288,7 +294,11 @@ const EditApplication = () => {
 
     const handleFileUpload = async (field, file) => {
         const token = localStorage.getItem('staffAccessToken')
-        const setLoading = field === 'banner' ? setUploadingBanner : setUploadingDescription
+        const setLoading = field === 'banner'
+            ? setUploadingBanner
+            : field === 'description'
+                ? setUploadingDescription
+                : setUploadingSelfDeclaration
 
         setLoading(true)
         setErrorRetry('')
@@ -364,6 +374,7 @@ const EditApplication = () => {
             formData.anganwadiList?.length > 0 &&
             formData.banner !== '' &&
             formData.description !== '' &&
+            formData.selfDeclarationForm !== '' &&
             formData.startDate !== '' &&
             formData.endDate !== ''
     }
@@ -400,6 +411,7 @@ const EditApplication = () => {
             anganwadiList: formData.anganwadiList,
             banner: formData.banner,
             description: formData.description,
+            selfDeclarationForm: formData.selfDeclarationForm,
             startDate: convertDateToAPI(formData.startDate),
             endDate: convertDateToAPI(formData.endDate),
             publish: formData.publish
@@ -510,7 +522,7 @@ const EditApplication = () => {
                     {/* Gram Panchayat Selection */}
                     {formData.taluka && (
                         <div className="form-group">
-                            <label>Gram Panchayat / Ward * ({formData.gramPanchayatList.length} selected)</label>
+                            <label>Gram Panchayat * ({formData.gramPanchayatList.length} selected)</label>
                             {gramPanchayatOptions.length > 0 ? (
                                 renderCheckboxGrid(
                                     gramPanchayatOptions,
@@ -518,7 +530,7 @@ const EditApplication = () => {
                                     handleGramPanchayatChange
                                 )
                             ) : (
-                                <p className="no-options">No Gram Panchayats / Wards available for selected Taluka</p>
+                                <p className="no-options">No Gram Panchayats available for selected Taluka</p>
                             )}
                             {validationErrors.gramPanchayatList && (
                                 <span className="error">{validationErrors.gramPanchayatList}</span>
@@ -588,6 +600,32 @@ const EditApplication = () => {
                                 <div className="upload-filename">{formData.description}</div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Self Declaration Upload */}
+                    <div className="form-field">
+                        <label className="form-label">
+                            Self Declaration Form <span className="required">*</span>
+                        </label>
+                        <div className="upload-section">
+                            <input
+                                type="file"
+                                id="selfDeclarationFile"
+                                onChange={(e) => handleFileUpload('selfDeclarationForm', e.target.files[0])}
+                                accept=".pdf"
+                                disabled={uploadingSelfDeclaration}
+                            />
+                            <label htmlFor="selfDeclarationFile"
+                                   className={`upload-btn ${formData.selfDeclarationForm ? 'uploaded' : ''}`}>
+                                {uploadingSelfDeclaration ? '⏳ Uploading...' : formData.selfDeclarationForm ? '✓ Uploaded' : '📤 Upload Self Declaration'}
+                            </label>
+                            {formData.selfDeclarationForm && (
+                                <div className="upload-filename">{formData.selfDeclarationForm}</div>
+                            )}
+                        </div>
+                        {validationErrors.selfDeclarationForm && (
+                            <span className="error">{validationErrors.selfDeclarationForm}</span>
+                        )}
                     </div>
 
                     {/* Start Date */}

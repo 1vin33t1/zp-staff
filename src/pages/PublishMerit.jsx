@@ -21,8 +21,11 @@ const PublishMerit = () => {
 
     // Upload state
     const [meritListAsset, setMeritListAsset] = useState('')
+    const [origMeritListAsset, setOrigMeritListAsset] = useState('')
+
     const [uploadingMeritList, setUploadingMeritList] = useState(false)
     const [letterAssets, setLetterAssets] = useState({}) // { userId: assetName }
+    const [origLetterAssets, setOrigLetterAssets] = useState({}) // { userId: assetName }
     const [uploadingLetter, setUploadingLetter] = useState({}) // { userId: boolean }
 
     // Publish state
@@ -170,8 +173,10 @@ const PublishMerit = () => {
             if (data.result && data.data) {
                 if (type === 'meritList') {
                     setMeritListAsset(data.data)
+                    setOrigMeritListAsset(file.name)
                 } else {
                     setLetterAssets({ ...letterAssets, [userId]: data.data })
+                    setOrigLetterAssets({ ...letterAssets, [userId]: file.name })
                 }
             } else {
                 throw new Error('Upload failed')
@@ -325,7 +330,7 @@ const PublishMerit = () => {
                                 {uploadingMeritList ? (
                                     <span>⏳ Uploading...</span>
                                 ) : meritListAsset ? (
-                                    <span>✓ Uploaded: {meritListAsset} (Click to change)</span>
+                                    <span>✓ Uploaded: {origMeritListAsset} (Click to change)</span>
                                 ) : (
                                     <span>📄 Click to Upload Merit List</span>
                                 )}
@@ -412,7 +417,7 @@ const PublishMerit = () => {
                                                         )}
                                                     </label>
                                                     {letterAssets[candidate.id] && (
-                                                        <div className="asset-name">{letterAssets[candidate.id]}</div>
+                                                        <div className="asset-name">{origLetterAssets[candidate.id]}</div>
                                                     )}
                                                 </div>
                                             </td>

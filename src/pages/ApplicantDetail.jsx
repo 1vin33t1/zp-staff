@@ -89,7 +89,7 @@ const ApplicantDetail = () => {
     const calculateOverallStatus = (rows) => {
         // Check if all rows with documents are approved
         const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
-        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve')
+        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve' || row.status === 'Reject' )
 
         if (allApproved) {
             setFormData(prev => ({ ...prev, overallStatus: 'Fully Verified' }))

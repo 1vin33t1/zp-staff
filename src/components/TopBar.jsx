@@ -38,7 +38,7 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
         <header className="topbar">
             <div className="topbar-content">
                 <div className="topbar-left">
-                    <h1 className="domain-name">ग्राम समृद्धि</h1>
+                    <h1 className="domain-name">ग्राम समृद्धि, चंद्रपूर</h1>
                 </div>
 
                 <nav className="topbar-nav">

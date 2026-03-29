@@ -139,8 +139,8 @@ const ViewApplication = () => {
                                         </div>
 
                                         <div className="detail-row">
-                                            <span className="detail-label">Gram Panchayat / Ward:</span>
-                                            <span className="detail-value">{app.gramPanchayatList.join(", ")}</span>
+                                            <span className="detail-label">Village :</span>
+                                            <span className="detail-value">{app.villageList.join(", ")}</span>
                                         </div>
 
                                         <div className="detail-row">
