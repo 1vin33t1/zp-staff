@@ -144,6 +144,11 @@ const ViewApplication = () => {
                                         </div>
 
                                         <div className="detail-row">
+                                            <span className="detail-label">Applicant Count :</span>
+                                            <span className="detail-value">{app.applicantCount}</span>
+                                        </div>
+
+                                        <div className="detail-row">
                                             <span className="detail-label">Start Date:</span>
                                             <span className="detail-value">{formatDate(app.startDate)}</span>
                                         </div>
