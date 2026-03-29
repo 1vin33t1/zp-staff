@@ -20,6 +20,44 @@
     font-size: 1rem;
 }
 
+.filters-section {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0 1rem 1.5rem;
+    padding: 1.25rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.filter-select {
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
 .loading-state {
     display: flex;
     flex-direction: column;
@@ -250,6 +288,10 @@
         width: 98%;
     }
 
+    .filters-section {
+        grid-template-columns: 1fr;
+    }
+
     .card-content {
         padding: 1.25rem 1.5rem;
     }
@@ -267,6 +309,11 @@
 
     .view-applications-container {
         padding: 0 1rem;
+    }
+
+    .filters-section {
+        margin: 0 0 1.25rem;
+        padding: 1rem;
     }
 
     .applications-list {

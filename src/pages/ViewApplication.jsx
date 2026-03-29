@@ -7,6 +7,9 @@ const ViewApplication = () => {
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [selectedTaluka, setSelectedTaluka] = useState('')
+    const [selectedVillage, setSelectedVillage] = useState('')
+    const [selectedStatus, setSelectedStatus] = useState('')
 
     useEffect(() => {
         fetchApplications()
@@ -61,6 +64,33 @@ const ViewApplication = () => {
         }
     }
 
+    const naturalSort = new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base'
+    }).compare
+
+    const talukaOptions = [...new Set(applications.map(app => app.taluka).filter(Boolean))]
+        .sort(naturalSort)
+
+    const villageOptions = [
+        ...new Set(
+            applications.flatMap(app => Array.isArray(app.villageList) ? app.villageList : []).filter(Boolean)
+        )
+    ].sort(naturalSort)
+
+    const statusOptions = [...new Set(applications.map(app => app.status).filter(Boolean))]
+        .sort(naturalSort)
+
+    const filteredApplications = applications.filter(app => {
+        const villages = Array.isArray(app.villageList) ? app.villageList : []
+
+        const matchesTaluka = !selectedTaluka || app.taluka === selectedTaluka
+        const matchesVillage = !selectedVillage || villages.includes(selectedVillage)
+        const matchesStatus = !selectedStatus || app.status === selectedStatus
+
+        return matchesTaluka && matchesVillage && matchesStatus
+    })
+
     const handleViewApplicants = (applicationId, allowView) => {
         if (allowView) {
             navigate(`/zp-staff/${applicationId}/applicants`)
@@ -100,20 +130,77 @@ const ViewApplication = () => {
 
                 {error && <div className="error-message">{error}</div>}
 
-                {applications.length === 0 ? (
+                {applications.length > 0 && (
+                    <div className="filters-section">
+                        <div className="filter-group">
+                            <label htmlFor="talukaFilter">Taluka</label>
+                            <select
+                                id="talukaFilter"
+                                value={selectedTaluka}
+                                onChange={(e) => setSelectedTaluka(e.target.value)}
+                                className="filter-select"
+                            >
+                                <option value="">All Taluka</option>
+                                {talukaOptions.map((taluka) => (
+                                    <option key={taluka} value={taluka}>
+                                        {taluka}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="filter-group">
+                            <label htmlFor="villageFilter">Village Name</label>
+                            <select
+                                id="villageFilter"
+                                value={selectedVillage}
+                                onChange={(e) => setSelectedVillage(e.target.value)}
+                                className="filter-select"
+                            >
+                                <option value="">All Villages</option>
+                                {villageOptions.map((village) => (
+                                    <option key={village} value={village}>
+                                        {village}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="filter-group">
+                            <label htmlFor="statusFilter">Status</label>
+                            <select
+                                id="statusFilter"
+                                value={selectedStatus}
+                                onChange={(e) => setSelectedStatus(e.target.value)}
+                                className="filter-select"
+                            >
+                                <option value="">All Status</option>
+                                {statusOptions.map((status) => (
+                                    <option key={status} value={status}>
+                                        {status}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {filteredApplications.length === 0 ? (
                     <div className="empty-state">
                         <div className="empty-icon">📋</div>
-                        <p>No applications found</p>
-                        <button
-                            className="primary-btn"
-                            onClick={() => navigate('/zp-staff/create-application')}
-                        >
-                            Create New Application
-                        </button>
+                        <p>{applications.length === 0 ? 'No applications found' : 'No applications match the selected filters'}</p>
+                        {applications.length === 0 && (
+                            <button
+                                className="primary-btn"
+                                onClick={() => navigate('/zp-staff/create-application')}
+                            >
+                                Create New Application
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="applications-list">
-                        {applications.map((app) => (
+                        {filteredApplications.map((app) => (
                             <div key={app.id} className="application-card">
                                 <div className="card-banner">
                                     <img

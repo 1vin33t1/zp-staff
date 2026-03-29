@@ -22,7 +22,7 @@ const Applicants = () => {
     const [sortDirection, setSortDirection] = useState('asc')
 
     // Filters
-    const [pincodeFilter, setPincodeFilter] = useState('')
+    const [villageFilter, setVillageFilter] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
 
     useEffect(() => {
@@ -31,7 +31,12 @@ const Applicants = () => {
 
     useEffect(() => {
         applyFiltersAndSort()
-    }, [applicants, pincodeFilter, statusFilter, sortColumn, sortDirection])
+    }, [applicants, villageFilter, statusFilter, sortColumn, sortDirection])
+
+    const naturalSort = new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base'
+    }).compare
 
     const fetchApplicants = async () => {
         const token = localStorage.getItem('staffAccessToken')
@@ -63,8 +68,8 @@ const Applicants = () => {
         let result = [...applicants]
 
         // Apply filters
-        if (pincodeFilter) {
-            result = result.filter(app => app.pincode.includes(pincodeFilter))
+        if (villageFilter) {
+            result = result.filter(app => app.village === villageFilter)
         }
 
         if (statusFilter) {
@@ -143,9 +148,12 @@ const Applicants = () => {
     }
 
     const clearFilters = () => {
-        setPincodeFilter('')
+        setVillageFilter('')
         setStatusFilter('')
     }
+
+    const villageOptions = [...new Set(applicants.map(app => app.village).filter(Boolean))]
+        .sort(naturalSort)
 
     if (loading) {
         return (
@@ -173,15 +181,20 @@ const Applicants = () => {
                 {/* Filters */}
                 <div className="filters-section">
                     <div className="filter-group">
-                        <label htmlFor="pincodeFilter">Filter by Pincode:</label>
-                        <input
-                            id="pincodeFilter"
-                            type="text"
-                            value={pincodeFilter}
-                            onChange={(e) => setPincodeFilter(e.target.value)}
-                            placeholder="Enter pincode"
-                            className="filter-input"
-                        />
+                        <label htmlFor="villageFilter">Filter by Village:</label>
+                        <select
+                            id="villageFilter"
+                            value={villageFilter}
+                            onChange={(e) => setVillageFilter(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="">All Villages</option>
+                            {villageOptions.map((village) => (
+                                <option key={village} value={village}>
+                                    {village}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="filter-group">
@@ -201,7 +214,7 @@ const Applicants = () => {
                         </select>
                     </div>
 
-                    {(pincodeFilter || statusFilter) && (
+                    {(villageFilter || statusFilter) && (
                         <button onClick={clearFilters} className="clear-filters-btn">
                             Clear Filters
                         </button>
@@ -210,7 +223,9 @@ const Applicants = () => {
 
                 {/* Results count */}
                 <div className="results-info">
-                    Showing {startIndex + 1} - {Math.min(endIndex, filteredApplicants.length)} of {filteredApplicants.length} applicants
+                    {filteredApplicants.length === 0
+                        ? 'Showing 0 of 0 applicants'
+                        : `Showing ${startIndex + 1} - ${Math.min(endIndex, filteredApplicants.length)} of ${filteredApplicants.length} applicants`}
                 </div>
 
                 {/* Table */}
@@ -234,8 +249,8 @@ const Applicants = () => {
                                     <th onClick={() => handleSort('name')} className="sortable">
                                         Name {getSortIcon('name')}
                                     </th>
-                                    <th onClick={() => handleSort('pincode')} className="sortable">
-                                        Pincode {getSortIcon('pincode')}
+                                    <th onClick={() => handleSort('village')} className="sortable">
+                                        Village {getSortIcon('village')}
                                     </th>
                                     <th onClick={() => handleSort('merit')} className="sortable">
                                         Merit {getSortIcon('merit')}
@@ -255,7 +270,7 @@ const Applicants = () => {
                                         <td>{startIndex + index + 1}</td>
                                         <td className="id-cell">{applicant.id}</td>
                                         <td>{applicant.name}</td>
-                                        <td>{applicant.pincode}</td>
+                                        <td>{applicant.village}</td>
                                         <td>{applicant.merit}</td>
                                         <td>{applicant.verifiedMerit}</td>
                                         <td>
