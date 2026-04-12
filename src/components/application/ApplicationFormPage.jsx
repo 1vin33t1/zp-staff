@@ -58,7 +58,6 @@ const createInitialFormState = () => ({
     anganwadiList: [],
     banner: '',
     description: '',
-    selfDeclarationForm: '',
     startDate: '',
     endDate: '',
     publish: false,
@@ -172,7 +171,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
     const [uploadingFields, setUploadingFields] = useState({
         banner: false,
         description: false,
-        selfDeclarationForm: false,
     })
     const [submitting, setSubmitting] = useState(false)
     const [showDisclaimer, setShowDisclaimer] = useState(false)
@@ -255,7 +253,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                     anganwadiList: applicationData.anganwadiList || [],
                     banner: applicationData.banner || '',
                     description: applicationData.description || '',
-                    selfDeclarationForm: applicationData.selfDeclarationForm || '',
                     startDate: convertDateToInput(applicationData.startDate) || '',
                     endDate: convertDateToInput(applicationData.endDate) || '',
                     publish: applicationData.publish || false,
@@ -376,10 +373,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
             errors.description = 'Description is required'
         }
 
-        if (!formData.selfDeclarationForm) {
-            errors.selfDeclarationForm = 'Self declaration form is required'
-        }
-
         if (!formData.startDate) {
             errors.startDate = 'Start date is required'
         }
@@ -403,7 +396,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
         && formData.anganwadiList.length > 0
         && formData.banner !== ''
         && formData.description !== ''
-        && formData.selfDeclarationForm !== ''
         && formData.startDate !== ''
         && formData.endDate !== ''
     )
@@ -470,7 +462,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
             anganwadiList: formData.anganwadiList,
             banner: formData.banner,
             description: formData.description,
-            selfDeclarationForm: formData.selfDeclarationForm,
             startDate: convertDateToApi(formData.startDate),
             endDate: convertDateToApi(formData.endDate),
             publish: formData.publish,
@@ -641,19 +632,6 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                         onUpload={(file) => handleFileUpload('description', file)}
                     />
                     {validationErrors.description && <span className="error">{validationErrors.description}</span>}
-
-                    <FileUploadField
-                        id={`${mode}-self-declaration-file`}
-                        label="Self Declaration Form"
-                        value={formData.selfDeclarationForm}
-                        accept=".pdf"
-                        isUploading={uploadingFields.selfDeclarationForm}
-                        isDisabled={submitting}
-                        onUpload={(file) => handleFileUpload('selfDeclarationForm', file)}
-                    />
-                    {validationErrors.selfDeclarationForm && (
-                        <span className="error">{validationErrors.selfDeclarationForm}</span>
-                    )}
 
                     <div className="form-field">
                         <label htmlFor="startDate">Start Date <span className="required">*</span></label>

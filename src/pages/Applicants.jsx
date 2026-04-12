@@ -198,10 +198,10 @@ const Applicants = () => {
                         >
                             <option value="">All Status</option>
                             <option value="submitted">Submitted</option>
+                            <option value="pending">Pending</option>
                             <option value="verified">Verified</option>
                             <option value="rejected">Rejected</option>
-                            <option value="pending">Pending</option>
-                            <option value="rectification">Rectification</option>
+                            <option value="flagged">Flagged</option>
                         </select>
                     </div>
 

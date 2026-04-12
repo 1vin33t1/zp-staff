@@ -93,7 +93,7 @@ const ApplicantDetail = () => {
         if (allApproved) {
             setFormData(prev => ({ ...prev, overallStatus: 'Fully Verified' }))
         } else if (formData.overallStatus === 'Fully Verified') {
-            // Deselect Fully Verified if not all approved
+            // Deselect Fully Verified if not all processed
             setFormData(prev => ({ ...prev, overallStatus: 'Pending' }))
         }
     }
