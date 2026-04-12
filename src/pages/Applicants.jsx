@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import { naturalSort } from '../lib/sort'
 import EmptyState from '../components/ui/EmptyState'
 import InlineMessage from '../components/ui/InlineMessage'
@@ -17,6 +18,11 @@ const Applicants = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [publishMerit, setPublishMerit] = useState(false)
+    const [canStartAudit, setCanStartAudit] = useState(false)
+    const [auditStarted, setAuditStarted] = useState(false)
+    const [statusNotes, setStatusNotes] = useState([])
+    const [showAuditDisclaimer, setShowAuditDisclaimer] = useState(false)
+    const [startingAudit, setStartingAudit] = useState(false)
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
@@ -38,7 +44,19 @@ const Applicants = () => {
         applyFiltersAndSort()
     }, [applicants, villageFilter, statusFilter, sortColumn, sortDirection])
 
-    const fetchApplicants = async () => {
+    const applyApplicantsData = (data) => {
+        setApplicants(data.applicants || [])
+        setPublishMerit(Boolean(data.publishMerit))
+        setCanStartAudit(Boolean(data.canStartAudit))
+        setAuditStarted(Boolean(data.auditStarted))
+        setStatusNotes(Array.isArray(data.status) ? data.status : [])
+    }
+
+    const fetchApplicants = async ({ showLoader = true } = {}) => {
+        if (showLoader) {
+            setLoading(true)
+        }
+
         try {
             const data = await fetchJson(`/zp-staff/${applicationId}/applicants`, {
                 method: 'GET',
@@ -46,15 +64,17 @@ const Applicants = () => {
             })
 
             if (data.result && data.data) {
-                setApplicants(data.data.applicants || [])
-                setPublishMerit(data.data.publishMerit || false)
+                setError('')
+                applyApplicantsData(data.data)
             } else {
                 throw new Error('Invalid response format')
             }
         } catch (err) {
             setError('Failed to load applicants. Please try again.')
         } finally {
-            setLoading(false)
+            if (showLoader) {
+                setLoading(false)
+            }
         }
     }
 
@@ -119,6 +139,42 @@ const Applicants = () => {
         }
     }
 
+    const handleStartAuditClick = () => {
+        if (!canStartAudit || auditStarted || startingAudit) {
+            return
+        }
+
+        setError('')
+        setShowAuditDisclaimer(true)
+    }
+
+    const handleConfirmStartAudit = async () => {
+        setShowAuditDisclaimer(false)
+        setStartingAudit(true)
+        setError('')
+
+        try {
+            const data = await fetchJson(`/zp-staff/${applicationId}/start-audit`, {
+                method: 'POST',
+                headers: createAuthHeaders({
+                    'Content-Type': 'application/json',
+                }),
+            })
+
+            if (data.result && data.data === 'success') {
+                setAuditStarted(true)
+                setCanStartAudit(false)
+                await fetchApplicants({ showLoader: false })
+            } else {
+                throw new Error('Unable to start audit')
+            }
+        } catch (err) {
+            setError('Not able to start the Audit')
+        } finally {
+            setStartingAudit(false)
+        }
+    }
+
     const handleViewApplicant = (applicantId) => {
         navigate(`/zp-staff/${applicationId}/applicants/${applicantId}`)
     }
@@ -148,6 +204,21 @@ const Applicants = () => {
 
     const villageOptions = [...new Set(applicants.map(app => app.village).filter(Boolean))]
         .sort(naturalSort)
+
+    const startAuditButtonClass = auditStarted || canStartAudit || startingAudit
+        ? 'enabled'
+        : 'disabled'
+    const isStartAuditClickable = canStartAudit && !auditStarted && !startingAudit
+    const startAuditButtonLabel = auditStarted
+        ? 'Audit Started'
+        : startingAudit
+            ? 'Starting Audit...'
+            : 'Start Audit'
+    const startAuditButtonTitle = auditStarted
+        ? 'Audit has already been started'
+        : canStartAudit
+            ? 'Start audit'
+            : 'Audit cannot be started yet'
 
     if (loading) {
         return (
@@ -313,18 +384,53 @@ const Applicants = () => {
 
                 {/* Publish Merit Button */}
                 <div className="action-section">
-                    <button
-                        className={`publish-merit-btn ${publishMerit ? 'enabled' : 'disabled'}`}
-                        onClick={handlePublishMerit}
-                        disabled={!publishMerit}
-                        title={!publishMerit ? 'Not yet eligible for publishing merit list' : 'Publish merit list'}
-                    >
-                        Publish Merit
-                    </button>
+                    <div className="action-buttons">
+                        <button
+                            className={`start-audit-btn ${startAuditButtonClass}`}
+                            onClick={handleStartAuditClick}
+                            disabled={!isStartAuditClickable}
+                            title={startAuditButtonTitle}
+                        >
+                            {startAuditButtonLabel}
+                        </button>
+                        <button
+                            className={`publish-merit-btn ${publishMerit ? 'enabled' : 'disabled'}`}
+                            onClick={handlePublishMerit}
+                            disabled={!publishMerit}
+                            title={!publishMerit ? 'Not yet eligible for publishing merit list' : 'Publish merit list'}
+                        >
+                            Publish Merit
+                        </button>
+                    </div>
+                    {!canStartAudit && !auditStarted && (
+                        <p className="audit-hint">Audit cannot be started yet</p>
+                    )}
                     {!publishMerit && (
                         <p className="publish-hint">Not yet eligible for publishing merit list</p>
                     )}
+                    {statusNotes.length > 0 && (
+                        <div className="status-notes">
+                            <h3>Status</h3>
+                            <div className="status-notes-list">
+                                {statusNotes.map((note, index) => (
+                                    <div key={`${note}-${index}`} className="status-note-item">
+                                        {note}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
+
+                <ConfirmModal
+                    isOpen={showAuditDisclaimer}
+                    title="Start Audit"
+                    description="Once Audit is started you cannot make changes to application list"
+                    cancelLabel="Go Back"
+                    confirmLabel="OK"
+                    onCancel={() => setShowAuditDisclaimer(false)}
+                    onConfirm={handleConfirmStartAudit}
+                />
             </div>
         </div>
     )
