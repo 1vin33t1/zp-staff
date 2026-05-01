@@ -4,6 +4,7 @@ const STAFF_STORAGE_KEYS = {
     lastActivity: 'staffLastActivity',
     lastRefresh: 'staffLastRefresh',
     userInfo: 'staffUserInfo',
+    pendingRedirect: 'staffPendingRedirect',
 }
 
 const setStorageValue = (key, value) => {
@@ -61,10 +62,26 @@ export const setStaffUserInfo = (userInfo) => {
     localStorage.setItem(STAFF_STORAGE_KEYS.userInfo, JSON.stringify(userInfo))
 }
 
+export const getStaffPendingRedirect = () => localStorage.getItem(STAFF_STORAGE_KEYS.pendingRedirect)
+
+export const setStaffPendingRedirect = (redirectPath) => {
+    if (!redirectPath || !redirectPath.startsWith('/zp-staff') || redirectPath === '/zp-staff') {
+        return
+    }
+
+    setStorageValue(STAFF_STORAGE_KEYS.pendingRedirect, redirectPath)
+}
+
+export const clearStaffPendingRedirect = () => {
+    localStorage.removeItem(STAFF_STORAGE_KEYS.pendingRedirect)
+}
+
 export const clearStaffSession = () => {
-    Object.values(STAFF_STORAGE_KEYS).forEach((key) => {
-        localStorage.removeItem(key)
-    })
+    localStorage.removeItem(STAFF_STORAGE_KEYS.accessToken)
+    localStorage.removeItem(STAFF_STORAGE_KEYS.userEmail)
+    localStorage.removeItem(STAFF_STORAGE_KEYS.lastActivity)
+    localStorage.removeItem(STAFF_STORAGE_KEYS.lastRefresh)
+    localStorage.removeItem(STAFF_STORAGE_KEYS.userInfo)
 }
 
 export { STAFF_STORAGE_KEYS }

@@ -1,9 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { fetchJson } from '../lib/api'
-import { setStaffLastActivity, setStaffLastRefresh, setStaffUserInfo } from '../lib/authStorage'
+import {
+    getStaffPendingRedirect,
+    setStaffLastActivity,
+    setStaffLastRefresh,
+    setStaffUserInfo,
+} from '../lib/authStorage'
 import './LoginPage.css'
 
 const LoginPage = ({ onLogin }) => {
+    const location = useLocation()
+    const redirectRef = useRef(null)
     const [email, setEmail] = useState('')
     const [otp, setOtp] = useState(['', '', '', ''])
     const [step, setStep] = useState('email') // 'email', 'otp'
@@ -12,6 +20,14 @@ const LoginPage = ({ onLogin }) => {
     const [countdown, setCountdown] = useState(0)
     const [emailError, setEmailError] = useState('')
     const canVerifyRef = useRef(false)
+
+    if (!redirectRef.current) {
+        const queryRedirect = new URLSearchParams(location.search).get('redirect')
+        redirectRef.current = location.state?.redirectTo
+            || queryRedirect
+            || getStaffPendingRedirect()
+            || '/zp-staff/dashboard'
+    }
 
     // Countdown timer for resend OTP
     useEffect(() => {
@@ -95,7 +111,7 @@ const LoginPage = ({ onLogin }) => {
                 if (data.meta) {
                     setStaffUserInfo(data.meta)
                 }
-                onLogin(email, data.accessToken)
+                onLogin(email, data.accessToken, redirectRef.current)
             } else {
                 setError(data.failureReason || 'Invalid OTP')
                 setOtp(['', '', '', ''])

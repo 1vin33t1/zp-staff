@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiUrl, fetchJson } from '../lib/api'
 import {
+    clearStaffPendingRedirect,
     clearStaffSession,
     getStaffAccessToken,
     getStaffLastActivity,
@@ -19,6 +20,7 @@ const TOKEN_REFRESH_MS = 5 * 60 * 1000
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
 
 export const useStaffSession = () => {
+    const [authReady, setAuthReady] = useState(false)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [userEmail, setUserEmail] = useState(null)
     const navigate = useNavigate()
@@ -43,6 +45,14 @@ export const useStaffSession = () => {
         }
     }
 
+    const clearSessionState = () => {
+        clearStaffSession()
+        setIsAuthenticated(false)
+        setUserEmail(null)
+        stopActivityMonitoring()
+        stopTokenRefresh()
+    }
+
     const handleLogout = async (callApi = true) => {
         if (callApi) {
             try {
@@ -55,12 +65,10 @@ export const useStaffSession = () => {
             }
         }
 
-        clearStaffSession()
-        setIsAuthenticated(false)
-        setUserEmail(null)
-        stopActivityMonitoring()
-        stopTokenRefresh()
-        navigate('/zp-staff')
+        clearSessionState()
+        clearStaffPendingRedirect()
+        setAuthReady(true)
+        navigate('/zp-staff', { replace: true })
     }
 
     const resetActivityTimer = () => {
@@ -119,14 +127,18 @@ export const useStaffSession = () => {
         }
     }
 
-    const handleLogin = (email, accessToken) => {
+    const handleLogin = (email, accessToken, redirectTo = '/zp-staff/dashboard') => {
         setStaffAccessToken(accessToken)
         setStaffUserEmail(email)
         setIsAuthenticated(true)
         setUserEmail(email)
+        setAuthReady(true)
         startActivityMonitoring()
         startTokenRefresh()
-        navigate('/zp-staff/dashboard')
+        navigate(redirectTo, { replace: true })
+        setTimeout(() => {
+            clearStaffPendingRedirect()
+        }, 1000)
     }
 
     const getInactivityTime = () => {
@@ -143,7 +155,8 @@ export const useStaffSession = () => {
     useEffect(() => {
         const lastActivityString = getStaffLastActivity()
         if (!lastActivityString) {
-            handleLogout(true)
+            clearSessionState()
+            setAuthReady(true)
             return undefined
         }
 
@@ -151,7 +164,8 @@ export const useStaffSession = () => {
         const fifteenMinutesAgo = new Date(Date.now() - ACTIVITY_TIMEOUT_MS)
 
         if (lastActivity < fifteenMinutesAgo) {
-            handleLogout(true)
+            clearSessionState()
+            setAuthReady(true)
             return undefined
         }
 
@@ -159,7 +173,8 @@ export const useStaffSession = () => {
         const email = getStaffUserEmail()
 
         if (!token || !email) {
-            handleLogout(true)
+            clearSessionState()
+            setAuthReady(true)
             return undefined
         }
 
@@ -176,6 +191,7 @@ export const useStaffSession = () => {
         const lastRefresh = new Date(lastRefreshString)
         const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
         startTokenRefresh(lastRefresh < twoMinutesAgo)
+        setAuthReady(true)
 
         return () => {
             stopActivityMonitoring()
@@ -187,6 +203,7 @@ export const useStaffSession = () => {
         getInactivityTime,
         handleLogin,
         handleLogout,
+        authReady,
         isAuthenticated,
         userEmail,
     }

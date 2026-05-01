@@ -633,30 +633,36 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                     />
                     {validationErrors.description && <span className="error">{validationErrors.description}</span>}
 
-                    <div className="form-field">
-                        <label htmlFor="startDate">Start Date <span className="required">*</span></label>
-                        <input
-                            id="startDate"
-                            type="date"
-                            value={formData.startDate}
-                            min={getDateMinusDays(60)}
-                            onChange={(event) => handleInputChange('startDate', event.target.value)}
-                            disabled={submitting}
-                        />
-                        {validationErrors.startDate && <span className="error">{validationErrors.startDate}</span>}
-                    </div>
+                    <div className="date-fields-row">
+                        <div className="form-field">
+                            <label htmlFor="startDate">Start Date <span className="required">*</span></label>
+                            <input
+                                id="startDate"
+                                type="date"
+                                value={formData.startDate}
+                                min={getDateMinusDays(60)}
+                                onClick={(event) => event.currentTarget.showPicker?.()}
+                                onFocus={(event) => event.currentTarget.showPicker?.()}
+                                onChange={(event) => handleInputChange('startDate', event.target.value)}
+                                disabled={submitting}
+                            />
+                            {validationErrors.startDate && <span className="error">{validationErrors.startDate}</span>}
+                        </div>
 
-                    <div className="form-field">
-                        <label htmlFor="endDate">End Date <span className="required">*</span></label>
-                        <input
-                            id="endDate"
-                            type="date"
-                            value={formData.endDate}
-                            min={formData.startDate || getTodayDate()}
-                            onChange={(event) => handleInputChange('endDate', event.target.value)}
-                            disabled={submitting}
-                        />
-                        {validationErrors.endDate && <span className="error">{validationErrors.endDate}</span>}
+                        <div className="form-field">
+                            <label htmlFor="endDate">End Date <span className="required">*</span></label>
+                            <input
+                                id="endDate"
+                                type="date"
+                                value={formData.endDate}
+                                min={formData.startDate || getTodayDate()}
+                                onClick={(event) => event.currentTarget.showPicker?.()}
+                                onFocus={(event) => event.currentTarget.showPicker?.()}
+                                onChange={(event) => handleInputChange('endDate', event.target.value)}
+                                disabled={submitting}
+                            />
+                            {validationErrors.endDate && <span className="error">{validationErrors.endDate}</span>}
+                        </div>
                     </div>
 
                     <div className="form-field checkbox-field">

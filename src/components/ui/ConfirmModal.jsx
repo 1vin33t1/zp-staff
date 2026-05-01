@@ -9,6 +9,8 @@ const ConfirmModal = ({
     cancelLabel = 'Cancel',
     confirmLabel = 'Confirm',
     confirmButtonClassName = 'primary-btn',
+    cancelDisabled = false,
+    confirmDisabled = false,
     onCancel,
     onConfirm,
 }) => {
@@ -23,10 +25,10 @@ const ConfirmModal = ({
                 {description && <p className="confirm-modal__description">{description}</p>}
                 {details && <div className="confirm-modal__details">{details}</div>}
                 <div className="confirm-modal__actions">
-                    <button className="secondary-btn" onClick={onCancel}>
+                    <button className="secondary-btn" onClick={onCancel} disabled={cancelDisabled}>
                         {cancelLabel}
                     </button>
-                    <button className={confirmButtonClassName} onClick={onConfirm}>
+                    <button className={confirmButtonClassName} onClick={onConfirm} disabled={confirmDisabled}>
                         {confirmLabel}
                     </button>
                 </div>

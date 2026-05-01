@@ -1,7 +1,9 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import TopBar from './components/TopBar'
 import { useStaffSession } from './hooks/useStaffSession'
+import { getStaffPendingRedirect } from './lib/authStorage'
+import PageLoader from './components/ui/PageLoader'
 import ApplicantDetail from './pages/ApplicantDetail'
 import ApplicantHistory from './pages/ApplicantHistory'
 import Applicants from './pages/Applicants'
@@ -15,7 +17,9 @@ import ViewApplication from './pages/ViewApplication'
 import './App.css'
 
 function App() {
+    const location = useLocation()
     const {
+        authReady,
         getInactivityTime,
         handleLogin,
         handleLogout,
@@ -31,9 +35,26 @@ function App() {
         { path: '/zp-staff/:applicationId/applicants', element: <Applicants /> },
         { path: '/zp-staff/:applicationId/edit', element: <EditApplication /> },
         { path: '/zp-staff/:applicationId/applicants/:applicantId', element: <ApplicantDetail /> },
-        { path: '/zp-staff/:applicationId/publish-merit', element: <PublishMerit /> },
+        { path: '/zp-staff/:applicationId/publish-prelim', element: <PublishMerit /> },
         { path: '/zp-staff/:applicationId/applicants/:applicantId/history', element: <ApplicantHistory /> },
     ]
+    const loginRedirect = new URLSearchParams(location.search).get('redirect')
+
+    if (!authReady) {
+        return (
+            <div className="app">
+                <TopBar
+                    isAuthenticated={isAuthenticated}
+                    userEmail={userEmail}
+                    onLogout={() => handleLogout(true)}
+                    getInactivityTime={getInactivityTime}
+                />
+                <main className="main-content">
+                    <PageLoader message="Checking session..." />
+                </main>
+            </div>
+        )
+    }
 
     return (
         <div className="app">
@@ -49,7 +70,7 @@ function App() {
                         path="/zp-staff"
                         element={
                             isAuthenticated
-                                ? <Navigate to="/zp-staff/dashboard" replace />
+                                ? <Navigate to={loginRedirect || getStaffPendingRedirect() || '/zp-staff/dashboard'} replace />
                                 : <LoginPage onLogin={handleLogin} />
                         }
                     />

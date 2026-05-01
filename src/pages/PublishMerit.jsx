@@ -172,7 +172,7 @@ const PublishMerit = () => {
                 throw new Error('Upload failed')
             }
         } catch (err) {
-            setError(`Failed to upload ${type === 'meritList' ? 'merit list' : 'letter'}. Please try again.`)
+            setError(`Failed to upload ${type === 'meritList' ? 'preliminary result' : 'letter'}. Please try again.`)
         } finally {
             if (type === 'meritList') {
                 setUploadingMeritList(false)
@@ -191,7 +191,7 @@ const PublishMerit = () => {
 
     const handlePublishClick = () => {
         if (!canPublish()) {
-            setError('Please upload merit list and all letters before publishing')
+            setError('Please upload preliminary result and all letters before publishing')
             return
         }
         setError('')
@@ -220,7 +220,7 @@ const PublishMerit = () => {
 
         try {
             const data = await fetchJson(
-                `/zp-staff/${applicationId}/publish-merit-list`,
+                `/zp-staff/${applicationId}/publish-prelim-list`,
                 {
                     method: 'POST',
                     headers: createAuthHeaders({
@@ -239,7 +239,7 @@ const PublishMerit = () => {
                 throw new Error('Publish failed')
             }
         } catch (err) {
-            setError('Failed to publish merit list. Please try again.')
+            setError('Failed to publish preliminary result. Please try again.')
             setPublishing(false)
         }
     }
@@ -259,7 +259,7 @@ const PublishMerit = () => {
             <div className="page-container">
                 <div className="page-content">
                     <PageSuccessState
-                        title="Merit List Successfully Published"
+                        title="Preliminary Result Successfully Published"
                         description="Redirecting to dashboard..."
                     />
                 </div>
@@ -272,7 +272,7 @@ const PublishMerit = () => {
             <div className="publish-merit-container">
                 {/* Header */}
                 <div className="page-header">
-                    <h1>Publish Merit List</h1>
+                    <h1>Publish Preliminary Result</h1>
                     <p className="application-id">Application ID: <strong>{applicationId}</strong></p>
                     <div className="stage-indicator">
                         <span className={`stage ${stage === 'selection' ? 'active' : 'completed'}`}>1. Select Candidates</span>
@@ -294,10 +294,10 @@ const PublishMerit = () => {
                     )}
                 </div>
 
-                {/* Merit List Upload (Upload stage only) */}
+                {/* Preliminary Result Upload (Upload stage only) */}
                 {stage === 'upload' && (
                     <div className="merit-list-upload-section">
-                        <h3>Upload Merit List Document</h3>
+                        <h3>Upload Preliminary Result Document</h3>
                         <div className="upload-box">
                             <input
                                 type="file"
@@ -313,7 +313,7 @@ const PublishMerit = () => {
                                 ) : meritListAsset ? (
                                     <span>✓ Uploaded: {origMeritListAsset} (Click to change)</span>
                                 ) : (
-                                    <span>📄 Click to Upload Merit List</span>
+                                    <span>📄 Click to Upload Preliminary Result</span>
                                 )}
                             </label>
                         </div>
@@ -460,7 +460,7 @@ const PublishMerit = () => {
                                 onClick={handlePublishClick}
                                 disabled={!canPublish() || publishing}
                             >
-                                {publishing ? 'Publishing...' : 'Publish Merit List'}
+                                {publishing ? 'Publishing...' : 'Publish Preliminary Result'}
                             </button>
                         </>
                     )}
@@ -469,19 +469,19 @@ const PublishMerit = () => {
                 {/* Disclaimer Modal */}
                 <ConfirmModal
                     isOpen={showDisclaimer}
-                    title="Confirm Merit List Publication"
+                    title="Confirm Preliminary Result Publication"
                     description="Please verify all information carefully before proceeding."
                     details={(
                         <div className="disclaimer-text">
-                            <p><strong>Important:</strong> After successful merit publication:</p>
+                            <p><strong>Important:</strong> After successful preliminary result publication:</p>
                             <ul>
                                 <li>Letters will be sent to all selected applicants.</li>
-                                <li>Merit list will be displayed on the applicants' home page.</li>
+                                <li>Preliminary result will be displayed on the applicants' home page.</li>
                                 <li><strong>This action cannot be reversed once published.</strong></li>
                             </ul>
                         </div>
                     )}
-                    confirmLabel="Yes, Publish Merit List"
+                    confirmLabel="Yes, Publish Preliminary Result"
                     confirmButtonClassName="danger-btn"
                     onCancel={() => setShowDisclaimer(false)}
                     onConfirm={handleConfirmPublish}

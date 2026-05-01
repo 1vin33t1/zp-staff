@@ -47,6 +47,7 @@ const ViewApplication = () => {
             case 'closed':
                 return 'status-closed'
             case 'merit list pending':
+            case 'preliminary result pending':
                 return 'status-pending'
             case 'selection pending':
                 return 'status-pending'

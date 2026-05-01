@@ -17,12 +17,15 @@ const Applicants = () => {
     const [filteredApplicants, setFilteredApplicants] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
-    const [publishMerit, setPublishMerit] = useState(false)
+    const [publishPrelim, setPublishPrelim] = useState(false)
     const [canStartAudit, setCanStartAudit] = useState(false)
     const [auditStarted, setAuditStarted] = useState(false)
+    const [auditor, setAuditor] = useState(false)
+    const [auditCompleted, setAuditCompleted] = useState(false)
     const [statusNotes, setStatusNotes] = useState([])
     const [showAuditDisclaimer, setShowAuditDisclaimer] = useState(false)
     const [startingAudit, setStartingAudit] = useState(false)
+    const [completingAudit, setCompletingAudit] = useState(false)
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
@@ -35,6 +38,7 @@ const Applicants = () => {
     // Filters
     const [villageFilter, setVillageFilter] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
+    const [flaggedFilter, setFlaggedFilter] = useState('')
 
     useEffect(() => {
         fetchApplicants()
@@ -42,13 +46,15 @@ const Applicants = () => {
 
     useEffect(() => {
         applyFiltersAndSort()
-    }, [applicants, villageFilter, statusFilter, sortColumn, sortDirection])
+    }, [applicants, villageFilter, statusFilter, flaggedFilter, sortColumn, sortDirection])
 
     const applyApplicantsData = (data) => {
         setApplicants(data.applicants || [])
-        setPublishMerit(Boolean(data.publishMerit))
+        setPublishPrelim(Boolean(data.publishPrelim))
         setCanStartAudit(Boolean(data.canStartAudit))
         setAuditStarted(Boolean(data.auditStarted))
+        setAuditor(Boolean(data.auditor))
+        setAuditCompleted(Boolean(data.auditCompleted))
         setStatusNotes(Array.isArray(data.status) ? data.status : [])
     }
 
@@ -69,7 +75,7 @@ const Applicants = () => {
             } else {
                 throw new Error('Invalid response format')
             }
-        } catch (err) {
+        } catch {
             setError('Failed to load applicants. Please try again.')
         } finally {
             if (showLoader) {
@@ -90,6 +96,11 @@ const Applicants = () => {
             result = result.filter(app => app.status.toLowerCase() === statusFilter.toLowerCase())
         }
 
+        if (flaggedFilter) {
+            const isFlagged = flaggedFilter === 'true'
+            result = result.filter(app => Boolean(app.flagged) === isFlagged)
+        }
+
         // Apply sorting
         result.sort((a, b) => {
             let aVal = a[sortColumn]
@@ -99,6 +110,9 @@ const Applicants = () => {
             if (sortColumn === 'merit' || sortColumn === 'verifiedMerit') {
                 aVal = parseFloat(aVal) || 0
                 bVal = parseFloat(bVal) || 0
+            } else if (sortColumn === 'flagged') {
+                aVal = Boolean(aVal)
+                bVal = Boolean(bVal)
             }
 
             // String comparison
@@ -133,9 +147,9 @@ const Applicants = () => {
         return sortDirection === 'asc' ? '↑' : '↓'
     }
 
-    const handlePublishMerit = () => {
-        if (publishMerit) {
-            navigate(`/zp-staff/${applicationId}/publish-merit`)
+    const handlePublishPrelim = () => {
+        if (publishPrelim) {
+            navigate(`/zp-staff/${applicationId}/publish-prelim`)
         }
     }
 
@@ -168,10 +182,38 @@ const Applicants = () => {
             } else {
                 throw new Error('Unable to start audit')
             }
-        } catch (err) {
+        } catch {
             setError('Not able to start the Audit')
         } finally {
             setStartingAudit(false)
+        }
+    }
+
+    const handleCompleteAudit = async () => {
+        if (!auditor || !auditStarted || auditCompleted || completingAudit) {
+            return
+        }
+
+        setCompletingAudit(true)
+        setError('')
+
+        try {
+            const data = await fetchJson(`/zp-staff/${applicationId}/complete-audit`, {
+                method: 'POST',
+                headers: createAuthHeaders({
+                    'Content-Type': 'application/json',
+                }),
+            })
+
+            if (data.result && data.data === 'success') {
+                await fetchApplicants({ showLoader: false })
+            } else {
+                throw new Error('Unable to complete audit')
+            }
+        } catch {
+            setError('Not able to complete the Audit')
+        } finally {
+            setCompletingAudit(false)
         }
     }
 
@@ -200,25 +242,23 @@ const Applicants = () => {
     const clearFilters = () => {
         setVillageFilter('')
         setStatusFilter('')
+        setFlaggedFilter('')
     }
 
     const villageOptions = [...new Set(applicants.map(app => app.village).filter(Boolean))]
         .sort(naturalSort)
 
-    const startAuditButtonClass = auditStarted || canStartAudit || startingAudit
+    const startAuditButtonClass = canStartAudit || startingAudit
         ? 'enabled'
         : 'disabled'
     const isStartAuditClickable = canStartAudit && !auditStarted && !startingAudit
-    const startAuditButtonLabel = auditStarted
-        ? 'Audit Started'
-        : startingAudit
-            ? 'Starting Audit...'
-            : 'Start Audit'
-    const startAuditButtonTitle = auditStarted
-        ? 'Audit has already been started'
-        : canStartAudit
+    const startAuditButtonLabel = startingAudit
+        ? 'Starting Audit...'
+        : 'Start Audit'
+    const startAuditButtonTitle = canStartAudit
             ? 'Start audit'
             : 'Audit cannot be started yet'
+    const canCompleteAudit = auditor && auditStarted && !auditCompleted
 
     if (loading) {
         return (
@@ -276,7 +316,21 @@ const Applicants = () => {
                         </select>
                     </div>
 
-                    {(villageFilter || statusFilter) && (
+                    <div className="filter-group">
+                        <label htmlFor="flaggedFilter">Filter by Flag:</label>
+                        <select
+                            id="flaggedFilter"
+                            value={flaggedFilter}
+                            onChange={(e) => setFlaggedFilter(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="">All</option>
+                            <option value="true">Flagged</option>
+                            <option value="false">Not Flagged</option>
+                        </select>
+                    </div>
+
+                    {(villageFilter || statusFilter || flaggedFilter) && (
                         <button onClick={clearFilters} className="clear-filters-btn">
                             Clear Filters
                         </button>
@@ -324,6 +378,9 @@ const Applicants = () => {
                                     <th onClick={() => handleSort('status')} className="sortable">
                                         Status {getSortIcon('status')}
                                     </th>
+                                    <th onClick={() => handleSort('flagged')} className="sortable">
+                                        Flag {getSortIcon('flagged')}
+                                    </th>
                                     <th>View</th>
                                 </tr>
                                 </thead>
@@ -340,6 +397,11 @@ const Applicants = () => {
                         <span className={`status-badge status-${applicant.status.toLowerCase()}`}>
                           {applicant.status}
                         </span>
+                                        </td>
+                                        <td>
+                                            {applicant.flagged && (
+                                                <span className="flagged-tag">Flagged</span>
+                                            )}
                                         </td>
                                         <td>
                                             <button
@@ -382,31 +444,45 @@ const Applicants = () => {
                     </>
                 )}
 
-                {/* Publish Merit Button */}
+                {/* Publish Preliminary Result Button */}
                 <div className="action-section">
                     <div className="action-buttons">
-                        <button
-                            className={`start-audit-btn ${startAuditButtonClass}`}
-                            onClick={handleStartAuditClick}
-                            disabled={!isStartAuditClickable}
-                            title={startAuditButtonTitle}
-                        >
-                            {startAuditButtonLabel}
-                        </button>
-                        <button
-                            className={`publish-merit-btn ${publishMerit ? 'enabled' : 'disabled'}`}
-                            onClick={handlePublishMerit}
-                            disabled={!publishMerit}
-                            title={!publishMerit ? 'Not yet eligible for publishing merit list' : 'Publish merit list'}
-                        >
-                            Publish Merit
-                        </button>
+                        {!auditStarted && (
+                            <button
+                                className={`start-audit-btn ${startAuditButtonClass}`}
+                                onClick={handleStartAuditClick}
+                                disabled={!isStartAuditClickable}
+                                title={startAuditButtonTitle}
+                            >
+                                {startAuditButtonLabel}
+                            </button>
+                        )}
+                        {canCompleteAudit && (
+                            <button
+                                className="complete-audit-btn enabled"
+                                onClick={handleCompleteAudit}
+                                disabled={completingAudit}
+                                title="Complete audit"
+                            >
+                                {completingAudit ? 'Completing Audit...' : 'Complete Audit'}
+                            </button>
+                        )}
+                        {auditStarted && (
+                            <button
+                                className={`publish-merit-btn ${publishPrelim ? 'enabled' : 'disabled'}`}
+                                onClick={handlePublishPrelim}
+                                disabled={!publishPrelim}
+                                title={!publishPrelim ? 'Not yet eligible for publishing preliminary result' : 'Publish preliminary result'}
+                            >
+                                Publish Preliminary Result
+                            </button>
+                        )}
                     </div>
                     {!canStartAudit && !auditStarted && (
                         <p className="audit-hint">Audit cannot be started yet</p>
                     )}
-                    {!publishMerit && (
-                        <p className="publish-hint">Not yet eligible for publishing merit list</p>
+                    {auditStarted && !publishPrelim && (
+                        <p className="publish-hint">Not yet eligible for publishing preliminary result</p>
                     )}
                     {statusNotes.length > 0 && (
                         <div className="status-notes">

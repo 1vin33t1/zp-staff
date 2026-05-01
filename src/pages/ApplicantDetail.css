@@ -185,6 +185,12 @@
 }
 
 /* Document Button */
+.document-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .document-btn {
     padding: 0.75rem 1.5rem;
     background: #3b82f6;
@@ -199,10 +205,18 @@
     gap: 0.5rem;
 }
 
-.document-btn:hover {
+.document-btn:hover:not(:disabled) {
     background: #2563eb;
     transform: translateY(-2px);
     box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+}
+
+.secondary-document-btn {
+    background: #1d4ed8;
+}
+
+.secondary-document-btn:hover:not(:disabled) {
+    background: #1e40af;
 }
 
 /* Status Buttons */
@@ -269,6 +283,12 @@
 .status-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-btn:disabled,
+.overall-btn:disabled {
+    transform: none;
+    box-shadow: none;
 }
 
 /* Overall Section */
@@ -355,6 +375,16 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
+.locked-note {
+    margin-top: 1rem;
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    font-weight: 600;
+}
+
 /* Checkbox Group */
 .checkbox-group {
     margin-top: 1.5rem;
@@ -398,6 +428,61 @@
     padding: 1rem 2rem;
     font-size: 1rem;
     font-weight: 700;
+}
+
+.flag-control-btn,
+.flag-confirm-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+
+.flag-control-btn:hover:not(:disabled),
+.flag-confirm-btn:hover:not(:disabled) {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.unflag-control-btn {
+    background: #2e7d32;
+    color: white;
+    border: none;
+}
+
+.unflag-control-btn:hover:not(:disabled) {
+    background: #1b5e20;
+    transform: translateY(-1px);
+}
+
+.flag-modal-content {
+    margin-top: 0.5rem;
+}
+
+.flag-modal-error {
+    margin-bottom: 1rem;
+}
+
+.flag-comment-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.flag-comment-textarea:focus {
+    outline: none;
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.flag-modal-help {
+    margin: 0.5rem 0 0;
+    color: #6b7280;
+    font-size: 0.875rem;
 }
 
 /* Modal */
@@ -480,6 +565,10 @@
     }
 
     .action-buttons {
+        flex-direction: column;
+    }
+
+    .document-actions {
         flex-direction: column;
     }
 }
