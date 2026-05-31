@@ -349,13 +349,24 @@ const ApplicantDetail = () => {
                     {value === 'Yes' ? '✓ Yes' : '✗ No'}
                 </div>
             )
-        } else if(valueType === 'image') {
+        } else if (valueType === 'image') {
             return (
                 <div className="resume-photo">
                     <img src={value} alt="profile photo" />
                 </div>
             )
-        }else {
+        } else if (valueType === 'doc') {
+            return (
+                <div className="document-actions">
+                    <button
+                        className="document-btn"
+                        onClick={() => window.open(toAbsoluteFileUrl(value), '_blank')}
+                    >
+                        Open
+                    </button>
+                </div>
+            )
+        } else {
             return <div className="field-display">{value}</div>
         }
     }
@@ -642,7 +653,7 @@ const ApplicantDetail = () => {
                                                 className="document-btn secondary-document-btn"
                                                 onClick={() => window.open(getDocumentUrl(row.secondaryDocumentProofUrl), '_blank')}
                                             >
-                                                📄 View Secondary Document
+                                                📄 View Self Declaration
                                             </button>
                                         )}
                                     </div>
