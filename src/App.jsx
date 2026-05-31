@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard'
 import EditApplication from './pages/EditApplication'
 import LoginPage from './pages/LoginPage'
 import Profile from './pages/StaffProfile.jsx'
+import PublishFinalResult from './pages/PublishFinalResult'
 import PublishMerit from './pages/PublishMerit'
 import ViewApplication from './pages/ViewApplication'
 import './App.css'
@@ -36,6 +37,7 @@ function App() {
         { path: '/zp-staff/:applicationId/edit', element: <EditApplication /> },
         { path: '/zp-staff/:applicationId/applicants/:applicantId', element: <ApplicantDetail /> },
         { path: '/zp-staff/:applicationId/publish-prelim', element: <PublishMerit /> },
+        { path: '/zp-staff/:applicationId/publish-final-result', element: <PublishFinalResult /> },
         { path: '/zp-staff/:applicationId/applicants/:applicantId/history', element: <ApplicantHistory /> },
     ]
     const loginRedirect = new URLSearchParams(location.search).get('redirect')

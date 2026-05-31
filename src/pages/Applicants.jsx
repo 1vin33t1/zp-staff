@@ -18,10 +18,12 @@ const Applicants = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [publishPrelim, setPublishPrelim] = useState(false)
+    const [publishFinal, setPublishFinal] = useState(false)
     const [canStartAudit, setCanStartAudit] = useState(false)
     const [auditStarted, setAuditStarted] = useState(false)
     const [auditor, setAuditor] = useState(false)
     const [auditCompleted, setAuditCompleted] = useState(false)
+    const [applicationClosed, setApplicationClosed] = useState(false)
     const [statusNotes, setStatusNotes] = useState([])
     const [showAuditDisclaimer, setShowAuditDisclaimer] = useState(false)
     const [startingAudit, setStartingAudit] = useState(false)
@@ -51,10 +53,12 @@ const Applicants = () => {
     const applyApplicantsData = (data) => {
         setApplicants(data.applicants || [])
         setPublishPrelim(Boolean(data.publishPrelim))
+        setPublishFinal(Boolean(data.publishFinal))
         setCanStartAudit(Boolean(data.canStartAudit))
         setAuditStarted(Boolean(data.auditStarted))
         setAuditor(Boolean(data.auditor))
         setAuditCompleted(Boolean(data.auditCompleted))
+        setApplicationClosed(Boolean(data.closed))
         setStatusNotes(Array.isArray(data.status) ? data.status : [])
     }
 
@@ -150,6 +154,12 @@ const Applicants = () => {
     const handlePublishPrelim = () => {
         if (publishPrelim) {
             navigate(`/zp-staff/${applicationId}/publish-prelim`)
+        }
+    }
+
+    const handlePublishFinal = () => {
+        if (publishFinal) {
+            navigate(`/zp-staff/${applicationId}/publish-final-result`)
         }
     }
 
@@ -312,7 +322,6 @@ const Applicants = () => {
                             <option value="pending">Pending</option>
                             <option value="verified">Verified</option>
                             <option value="rejected">Rejected</option>
-                            <option value="flagged">Flagged</option>
                         </select>
                     </div>
 
@@ -370,10 +379,10 @@ const Applicants = () => {
                                         Village {getSortIcon('village')}
                                     </th>
                                     <th onClick={() => handleSort('merit')} className="sortable">
-                                        Merit {getSortIcon('merit')}
+                                        System-Generate-Merit {getSortIcon('merit')}
                                     </th>
                                     <th onClick={() => handleSort('verifiedMerit')} className="sortable">
-                                        Verified Merit {getSortIcon('verifiedMerit')}
+                                        Human-Reviewed-Merit {getSortIcon('verifiedMerit')}
                                     </th>
                                     <th onClick={() => handleSort('status')} className="sortable">
                                         Status {getSortIcon('status')}
@@ -446,53 +455,69 @@ const Applicants = () => {
 
                 {/* Publish Preliminary Result Button */}
                 <div className="action-section">
-                    <div className="action-buttons">
-                        {!auditStarted && (
-                            <button
-                                className={`start-audit-btn ${startAuditButtonClass}`}
-                                onClick={handleStartAuditClick}
-                                disabled={!isStartAuditClickable}
-                                title={startAuditButtonTitle}
-                            >
-                                {startAuditButtonLabel}
-                            </button>
-                        )}
-                        {canCompleteAudit && (
-                            <button
-                                className="complete-audit-btn enabled"
-                                onClick={handleCompleteAudit}
-                                disabled={completingAudit}
-                                title="Complete audit"
-                            >
-                                {completingAudit ? 'Completing Audit...' : 'Complete Audit'}
-                            </button>
-                        )}
-                        {auditStarted && (
-                            <button
-                                className={`publish-merit-btn ${publishPrelim ? 'enabled' : 'disabled'}`}
-                                onClick={handlePublishPrelim}
-                                disabled={!publishPrelim}
-                                title={!publishPrelim ? 'Not yet eligible for publishing preliminary result' : 'Publish preliminary result'}
-                            >
-                                Publish Preliminary Result
-                            </button>
-                        )}
-                    </div>
-                    {!canStartAudit && !auditStarted && (
+                    {!applicationClosed && (
+                        <div className="action-buttons">
+                            {!auditStarted && (
+                                <button
+                                    className={`start-audit-btn ${startAuditButtonClass}`}
+                                    onClick={handleStartAuditClick}
+                                    disabled={!isStartAuditClickable}
+                                    title={startAuditButtonTitle}
+                                >
+                                    {startAuditButtonLabel}
+                                </button>
+                            )}
+                            {canCompleteAudit && (
+                                <button
+                                    className="complete-audit-btn enabled"
+                                    onClick={handleCompleteAudit}
+                                    disabled={completingAudit}
+                                    title="Complete audit"
+                                >
+                                    {completingAudit ? 'Completing Audit...' : 'Complete Audit'}
+                                </button>
+                            )}
+                            {auditStarted && publishFinal ? (
+                                <button
+                                    className="publish-merit-btn enabled"
+                                    onClick={handlePublishFinal}
+                                    title="Publish final result"
+                                >
+                                    Publish Final Result
+                                </button>
+                            ) : auditStarted && (
+                                <button
+                                    className={`publish-merit-btn ${publishPrelim ? 'enabled' : 'disabled'}`}
+                                    onClick={handlePublishPrelim}
+                                    disabled={!publishPrelim}
+                                    title={!publishPrelim ? 'Not yet eligible for publishing preliminary result' : 'Publish preliminary result'}
+                                >
+                                    Publish Preliminary Result
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    {!applicationClosed && !canStartAudit && !auditStarted && (
                         <p className="audit-hint">Audit cannot be started yet</p>
                     )}
-                    {auditStarted && !publishPrelim && (
+                    {!applicationClosed && auditStarted && !publishPrelim && !publishFinal && (
                         <p className="publish-hint">Not yet eligible for publishing preliminary result</p>
                     )}
-                    {statusNotes.length > 0 && (
+                    {(applicationClosed || statusNotes.length > 0) && (
                         <div className="status-notes">
                             <h3>Status</h3>
                             <div className="status-notes-list">
-                                {statusNotes.map((note, index) => (
-                                    <div key={`${note}-${index}`} className="status-note-item">
-                                        {note}
+                                {applicationClosed && statusNotes.length === 0 ? (
+                                    <div className="status-note-item">
+                                        Application is closed and final result has been published.
                                     </div>
-                                ))}
+                                ) : (
+                                    statusNotes.map((note, index) => (
+                                        <div key={`${note}-${index}`} className="status-note-item">
+                                            {note}
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
-import { getStaffUserInfo } from '../lib/authStorage'
+import { getStaffUserInfo, setStaffUserInfo } from '../lib/authStorage'
 import InlineMessage from '../components/ui/InlineMessage'
 import PageLoader from '../components/ui/PageLoader'
 import PageSuccessState from '../components/ui/PageSuccessState'
@@ -16,13 +16,13 @@ const StaffProfile = () => {
     const [profileData, setProfileData] = useState({
         name: '',
         postedRegion: '',
-        designatedRegion: [],
+        designation: '',
         phoneCode: '+91',
         mobile: ''
     })
     const [formData, setFormData] = useState({
         postedRegion: '',
-        designatedRegion: [],
+        designation: '',
         phoneCode: '+91',
         mobile: ''
     })
@@ -43,16 +43,22 @@ const StaffProfile = () => {
             const userData = getStaffUserInfo() || {}
 
             if (data.result && data.data) {
+                const nextUserInfo = {
+                    ...userData,
+                    name: userData.name || data.data.userId || '',
+                    designation: data.data.designation || '',
+                }
+                setStaffUserInfo(nextUserInfo)
                 setProfileData({
-                    name: userData.name || '',
-                    designatedRegion: Array.isArray(data.data.designatedRegion) ? data.data.designatedRegion : [],
+                    name: nextUserInfo.name,
+                    designation: data.data.designation || '',
                     postedRegion: Array.isArray(data.data.postedRegion) ? data.data.postedRegion.join(",") : '',
                     phoneCode: data.data.phoneCode || '+91',
                     mobile: data.data.mobile || ''
                 })
 
                 setFormData({
-                    designatedRegion: Array.isArray(data.data.designatedRegion) ? data.data.designatedRegion : [],
+                    designation: data.data.designation || '',
                     postedRegion: Array.isArray(data.data.postedRegion) ? data.data.postedRegion.join(",") : '',
                     phoneCode: data.data.phoneCode || '+91',
                     mobile: data.data.mobile || ''
@@ -187,7 +193,7 @@ const StaffProfile = () => {
     }
 
     const postedRegion = profileData.postedRegion ? profileData.postedRegion : 'Not yet posted to any taluka'
-    const designatedRegion = profileData.designatedRegion.length > 0 ? profileData.designatedRegion.join(', ') : 'No taluka assigned'
+    const designation = profileData.designation || 'Not provided'
 
     return (
         <div className="page-container">
@@ -222,12 +228,12 @@ const StaffProfile = () => {
                         </div>
                     </div>
 
-                    {/* Assigned Region - Inline */}
+                    {/* Designation - Inline */}
                     <div className="form-row">
                         <div className="form-item">
-                            <label className="form-label">Assigned Taluka</label>
+                            <label className="form-label">Designation</label>
                             <div className="display-field">
-                                {designatedRegion}
+                                {designation}
                             </div>
                         </div>
                     </div>

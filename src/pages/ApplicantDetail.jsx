@@ -21,11 +21,13 @@ const ApplicantDetail = () => {
         rows: [],
         overallStatus: 'Pending',
         overallStatusComment: '',
-        sendEmail: false
+        sendEmail: false,
+        flagRemark: '',
     })
     const [flagged, setFlagged] = useState(false)
     const [auditor, setAuditor] = useState(false)
     const [allowEdit, setAllowEdit] = useState(true)
+    const [applicationLocked, setApplicationLocked] = useState(false)
     const [validationErrors, setValidationErrors] = useState({})
     const [showDisclaimer, setShowDisclaimer] = useState(false)
     const [showFlagModal, setShowFlagModal] = useState(false)
@@ -35,6 +37,11 @@ const ApplicantDetail = () => {
     const [flagActionLoading, setFlagActionLoading] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [submitSuccess, setSubmitSuccess] = useState(false)
+    const [manual12thModalOpen, setManual12thModalOpen] = useState(false)
+    const [manual12thForm, setManual12thForm] = useState({ earned: '', total: '' })
+    const [manual12thError, setManual12thError] = useState('')
+    const [manual12thSubmitting, setManual12thSubmitting] = useState(false)
+    const [manual12thSuccess, setManual12thSuccess] = useState(false)
 
     useEffect(() => {
         fetchApplicantData()
@@ -52,10 +59,12 @@ const ApplicantDetail = () => {
             overallStatus: data.overallStatus || 'Pending',
             overallStatusComment: data.overallStatusComment || '',
             sendEmail: false,
+            flagRemark: data.flagRemark || '',
         })
         setFlagged(Boolean(data.flagged))
         setAuditor(Boolean(data.auditor))
         setAllowEdit(data.allowEdit !== false)
+        setApplicationLocked(Boolean(data.locked))
         setValidationErrors({})
     }
 
@@ -202,8 +211,8 @@ const ApplicantDetail = () => {
     }
 
     const handleSubmit = () => {
-        if (!allowEdit) {
-            setError('Verification is locked for this candidate.')
+        if (isVerificationLocked) {
+            setError(applicationLocked ? 'Application is locked after prelims.' : 'Verification is locked for this candidate.')
             return
         }
 
@@ -238,7 +247,7 @@ const ApplicantDetail = () => {
                 },
             )
 
-            if (data.result && data.data === 'success') {
+            if (String(data.data).toLowerCase() === 'success') {
                 setSubmitSuccess(true)
                 setTimeout(() => {
                     navigate(`/zp-staff/${applicationId}/applicants`)
@@ -253,7 +262,7 @@ const ApplicantDetail = () => {
     }
 
     const handleFlagClick = () => {
-        if (flagged || flagActionLoading) {
+        if (applicationLocked || flagged || flagActionLoading) {
             return
         }
 
@@ -266,7 +275,7 @@ const ApplicantDetail = () => {
     }
 
     const handleUnflagClick = () => {
-        if (!flagged || flagActionLoading) {
+        if (applicationLocked || !flagged || flagActionLoading) {
             return
         }
 
@@ -355,7 +364,148 @@ const ApplicantDetail = () => {
         return toAbsoluteFileUrl(url)
     }
 
-    const isVerificationLocked = !allowEdit
+    const getApplicantName = () => {
+        const nameRow = formData.rows.find(row => (
+            [1, 2, 3, 4].some(fieldNum => (
+                String(row[`key${fieldNum}`] || '').toLowerCase().includes('name')
+                    && row[`value${fieldNum}`]
+            ))
+        ))
+
+        if (!nameRow) {
+            return formData.userId || applicantId
+        }
+
+        const nameField = [1, 2, 3, 4].find(fieldNum => (
+            String(nameRow[`key${fieldNum}`] || '').toLowerCase().includes('name')
+                && nameRow[`value${fieldNum}`]
+        ))
+
+        return nameRow[`value${nameField}`] || formData.userId || applicantId
+    }
+
+    const is12thMarksRow = (row) => row.key1 === '12th Marks Earned'
+
+    const getRowValueByKeyText = (row, keyText) => {
+        const normalizedKeyText = keyText.toLowerCase()
+        const fieldNum = [1, 2, 3, 4].find(index => (
+            String(row[`key${index}`] || '').toLowerCase().includes(normalizedKeyText)
+        ))
+
+        return fieldNum ? row[`value${fieldNum}`] || '' : ''
+    }
+
+    const normalizeDecimalInput = (value) => (
+        value === '' || /^\d{0,8}(\.\d{0,2})?$/.test(value)
+            ? value
+            : null
+    )
+
+    const openManual12thModal = (row) => {
+        if (applicationLocked) {
+            return
+        }
+
+        setManual12thError('')
+        setManual12thForm({
+            earned: getRowValueByKeyText(row, 'earned'),
+            total: getRowValueByKeyText(row, 'total'),
+        })
+        setManual12thModalOpen(true)
+    }
+
+    const closeManual12thModal = () => {
+        if (manual12thSubmitting) {
+            return
+        }
+
+        setManual12thModalOpen(false)
+        setManual12thForm({ earned: '', total: '' })
+        setManual12thError('')
+    }
+
+    const handleManual12thChange = (field, value) => {
+        const normalizedValue = normalizeDecimalInput(value)
+
+        if (normalizedValue === null) {
+            return
+        }
+
+        setManual12thError('')
+        setManual12thForm(previousValue => ({
+            ...previousValue,
+            [field]: normalizedValue,
+        }))
+    }
+
+    const isManual12thFormValid = () => {
+        const earned = Number(manual12thForm.earned)
+        const total = Number(manual12thForm.total)
+
+        return manual12thForm.earned !== ''
+            && manual12thForm.total !== ''
+            && Number.isFinite(earned)
+            && Number.isFinite(total)
+            && earned >= 0
+            && total > earned
+    }
+
+    const handleManual12thSubmit = async (event) => {
+        event.preventDefault()
+
+        if (applicationLocked) {
+            setManual12thError('Application is locked after prelims.')
+            return
+        }
+
+        if (!isManual12thFormValid()) {
+            setManual12thError('Enter valid marks. Total marks must be greater than earned marks.')
+            return
+        }
+
+        setManual12thSubmitting(true)
+        setManual12thError('')
+
+        try {
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/manual-12th`,
+                {
+                    method: 'POST',
+                    headers: createAuthHeaders({
+                        'Content-Type': 'application/json',
+                    }),
+                    body: JSON.stringify({
+                        earned: Number(manual12thForm.earned),
+                        total: Number(manual12thForm.total),
+                    }),
+                },
+            )
+
+            if (data.result && data.data === 'success') {
+                setManual12thModalOpen(false)
+                setManual12thSuccess(true)
+                setTimeout(() => {
+                    window.location.reload()
+                }, 1000)
+            } else {
+                throw new Error('Manual 12th update failed')
+            }
+        } catch {
+            setManual12thError('Failed to update 12th marks. Please try again.')
+        } finally {
+            setManual12thSubmitting(false)
+        }
+    }
+
+    const hasDocumentProof = (row) => (
+        Boolean(row.documentProofUrl && row.documentProofUrl.trim() !== '')
+            || Boolean(row.secondaryDocumentProofUrl && row.secondaryDocumentProofUrl.trim() !== '')
+    )
+
+    const rowsForDisplay = formData.rows
+        .map((row, rowIndex) => ({ row, rowIndex }))
+
+    const isVerificationLocked = applicationLocked || !allowEdit
 
     if (loading) {
         return (
@@ -408,15 +558,33 @@ const ApplicantDetail = () => {
                 <InlineMessage>{error}</InlineMessage>
                 <InlineMessage variant="success">{successMessage}</InlineMessage>
 
-                {isVerificationLocked && (
+                {applicationLocked ? (
+                    <div className="locked-note">
+                        Application is locked after preliminary results. You can view details and documents, but actions are disabled.
+                    </div>
+                ) : isVerificationLocked && (
                     <div className="locked-note">
                         Verification status and reason are locked for this candidate.
                     </div>
                 )}
 
+                <div className="flag-remark-section">
+                    <label className="field-label" htmlFor="flag-remark">
+                        Flag Remark
+                    </label>
+                    <textarea
+                        id="flag-remark"
+                        className="flag-remark-textarea"
+                        value={formData.flagRemark}
+                        rows="3"
+                        readOnly
+                        placeholder="No flag remark"
+                    />
+                </div>
+
                 {/* Rows */}
                 <div className="rows-container">
-                    {formData.rows.map((row, rowIndex) => (
+                    {rowsForDisplay.map(({ row, rowIndex }) => (
                         <div key={rowIndex} className="row-card">
                             {/* Field 1 */}
                             <div className="field-group">
@@ -449,16 +617,26 @@ const ApplicantDetail = () => {
                             )}
 
                             {/* Document Proof */}
-                            {row.documentProofUrl && row.documentProofUrl.trim() !== '' && (
+                            {hasDocumentProof(row) && (
                                 <div className="field-group">
                                     <label className="field-label">Document Proof:</label>
                                     <div className="document-actions">
-                                        <button
-                                            className="document-btn"
-                                            onClick={() => window.open(getDocumentUrl(row.documentProofUrl), '_blank')}
-                                        >
-                                            📄 View Document
-                                        </button>
+                                        {row.documentProofUrl && row.documentProofUrl.trim() !== '' && (
+                                            <button
+                                                className="document-btn"
+                                                onClick={() => window.open(getDocumentUrl(row.documentProofUrl), '_blank')}
+                                            >
+                                                📄 View Document
+                                            </button>
+                                        )}
+                                        {!applicationLocked && is12thMarksRow(row) && (
+                                            <button
+                                                className="document-btn edit-12th-marks-btn"
+                                                onClick={() => openManual12thModal(row)}
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
                                         {row.secondaryDocumentProofUrl && row.secondaryDocumentProofUrl.trim() !== '' && (
                                             <button
                                                 className="document-btn secondary-document-btn"
@@ -601,7 +779,7 @@ const ApplicantDetail = () => {
 
                 {/* Action Section with Validation Errors */}
                 <div className="action-section">
-                    {Object.keys(validationErrors).length > 0 && (
+                    {!applicationLocked && Object.keys(validationErrors).length > 0 && (
                         <div className="validation-error-popup">
                             <strong>⚠️ Please fix the following errors:</strong>
                             <ul>
@@ -621,19 +799,19 @@ const ApplicantDetail = () => {
                             Go to Applicant List Page
                         </button>
 
-                        {auditor ? (
+                        {!applicationLocked && (auditor ? (
                             <>
                                 <button
                                     className="flag-control-btn"
                                     onClick={handleFlagClick}
-                                    disabled={flagged || flagActionLoading !== ''}
+                                    disabled={applicationLocked || flagged || flagActionLoading !== ''}
                                 >
                                     {flagActionLoading === 'flag' ? 'Flagging...' : 'Flag this candidate'}
                                 </button>
                                 <button
                                     className="unflag-control-btn"
                                     onClick={handleUnflagClick}
-                                    disabled={!flagged || flagActionLoading !== ''}
+                                    disabled={applicationLocked || !flagged || flagActionLoading !== ''}
                                 >
                                     {flagActionLoading === 'unflag' ? 'Unflagging...' : 'Unflag this candidate'}
                                 </button>
@@ -647,7 +825,7 @@ const ApplicantDetail = () => {
                             >
                                 {submitting ? 'Submitting...' : 'Submit Verification'}
                             </button>
-                        )}
+                        ))}
                     </div>
                 </div>
 
@@ -714,6 +892,69 @@ const ApplicantDetail = () => {
                     }}
                     onConfirm={handleConfirmFlagAction}
                 />
+
+                {manual12thSuccess && (
+                    <div className="manual-12th-success-overlay">
+                        <div className="manual-12th-success-card">
+                            <div className="manual-12th-success-icon">✓</div>
+                            <p>Edited successfully</p>
+                        </div>
+                    </div>
+                )}
+
+                {manual12thModalOpen && (
+                    <div className="manual-12th-modal__overlay">
+                        <div className="manual-12th-modal">
+                            <h3>Editing 12th Marks for {getApplicantName()}</h3>
+                            <InlineMessage>{manual12thError}</InlineMessage>
+                            <form onSubmit={handleManual12thSubmit}>
+                                <label className="manual-12th-field" htmlFor="manual-12th-earned">
+                                    <span>Earned Marks in 12th</span>
+                                    <input
+                                        id="manual-12th-earned"
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={manual12thForm.earned}
+                                        onChange={(event) => handleManual12thChange('earned', event.target.value)}
+                                        placeholder="0.00"
+                                        required
+                                        disabled={manual12thSubmitting}
+                                    />
+                                </label>
+                                <label className="manual-12th-field" htmlFor="manual-12th-total">
+                                    <span>Total Marks in 12th</span>
+                                    <input
+                                        id="manual-12th-total"
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={manual12thForm.total}
+                                        onChange={(event) => handleManual12thChange('total', event.target.value)}
+                                        placeholder="0.00"
+                                        required
+                                        disabled={manual12thSubmitting}
+                                    />
+                                </label>
+                                <div className="manual-12th-modal__actions">
+                                    <button
+                                        type="button"
+                                        className="secondary-btn"
+                                        onClick={closeManual12thModal}
+                                        disabled={manual12thSubmitting}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="primary-btn"
+                                        disabled={manual12thSubmitting || !isManual12thFormValid()}
+                                    >
+                                        {manual12thSubmitting ? 'Submitting...' : 'Submit'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

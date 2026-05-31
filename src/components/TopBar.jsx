@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getStaffUserInfo } from '../lib/authStorage'
+import { createAuthHeaders, fetchJson } from '../lib/api'
+import { getStaffUserInfo, setStaffUserInfo } from '../lib/authStorage'
 import './TopBar.css'
 
 const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => {
     const [timeRemaining, setTimeRemaining] = useState(15 * 60) // 15 minutes in seconds
+    const [userInfo, setUserInfo] = useState(() => getStaffUserInfo() || {})
 
     useEffect(() => {
         if (!isAuthenticated) return
@@ -19,19 +21,62 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
         return () => clearInterval(interval)
     }, [isAuthenticated, getInactivityTime])
 
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setUserInfo({})
+            return
+        }
+
+        const cachedUserInfo = getStaffUserInfo() || {}
+        setUserInfo(cachedUserInfo)
+
+        const fetchProfile = async () => {
+            try {
+                const data = await fetchJson('/zp-staff/profile', {
+                    method: 'GET',
+                    headers: createAuthHeaders(),
+                })
+
+                if (data.result && data.data) {
+                    const nextUserInfo = {
+                        ...cachedUserInfo,
+                        name: cachedUserInfo.name || data.data.userId || '',
+                        designation: data.data.designation || '',
+                    }
+
+                    setStaffUserInfo(nextUserInfo)
+                    setUserInfo(nextUserInfo)
+                }
+            } catch {
+                // Keep cached identity if profile refresh fails.
+            }
+        }
+
+        fetchProfile()
+    }, [isAuthenticated, userEmail])
+
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60)
         const secs = seconds % 60
         return `${mins}:${secs.toString().padStart(2, '0')}`
     }
 
-    const getDisplayEmail = () => {
+    const getDisplayName = () => {
         if (!userEmail) return ''
-        const userData = getStaffUserInfo()
-        if (userData) {
-            return userData.name ? userData.name : userEmail.split('@')[0]
-        }
+        if (userInfo.name) return userInfo.name
         return userEmail.split('@')[0]
+    }
+
+    const getDisplayIdentity = () => {
+        const displayName = getDisplayName()
+
+        if (!displayName) {
+            return ''
+        }
+
+        return userInfo.designation
+            ? `${userInfo.designation} : ${displayName}`
+            : displayName
     }
 
     return (
@@ -57,7 +102,7 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
                                 <span className="timer-value">{formatTime(timeRemaining)}</span>
                             </div>
                             <div className="user-section">
-                                <span className="user-email">{getDisplayEmail()}</span>
+                                <span className="user-email">{getDisplayIdentity()}</span>
                                 <button onClick={onLogout} className="logout-btn">Logout</button>
                             </div>
                         </>

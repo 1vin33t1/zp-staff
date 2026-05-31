@@ -219,6 +219,117 @@
     background: #1e40af;
 }
 
+.edit-12th-marks-btn {
+    background: #16a34a;
+}
+
+.edit-12th-marks-btn:hover:not(:disabled) {
+    background: #15803d;
+    box-shadow: 0 4px 6px rgba(22, 163, 74, 0.3);
+}
+
+.manual-12th-modal__overlay,
+.manual-12th-success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1250;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.manual-12th-modal {
+    width: min(520px, 94vw);
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+}
+
+.manual-12th-modal h3 {
+    margin: 0 0 1.25rem;
+    color: #111827;
+    font-size: 1.35rem;
+}
+
+.manual-12th-modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.manual-12th-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.manual-12th-field span {
+    color: #374151;
+    font-weight: 700;
+}
+
+.manual-12th-field input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.manual-12th-field input:focus {
+    outline: none;
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.manual-12th-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.manual-12th-modal__actions button {
+    min-width: 120px;
+    padding: 0.875rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.manual-12th-success-card {
+    width: min(320px, 90vw);
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    text-align: center;
+}
+
+.manual-12th-success-icon {
+    width: 64px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background: #16a34a;
+    color: white;
+    border-radius: 50%;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.manual-12th-success-card p {
+    margin: 0;
+    color: #166534;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
 /* Status Buttons */
 .status-buttons {
     display: flex;
@@ -485,6 +596,26 @@
     font-size: 0.875rem;
 }
 
+.flag-remark-section {
+    margin: 1.5rem 0;
+    padding: 1.25rem;
+    background: white;
+    border: 2px solid #f3f4f6;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.flag-remark-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #374151;
+    font: inherit;
+    resize: vertical;
+}
+
 /* Modal */
 .modal-overlay {
     position: fixed;
@@ -570,6 +701,14 @@
 
     .document-actions {
         flex-direction: column;
+    }
+
+    .manual-12th-modal__actions {
+        flex-direction: column;
+    }
+
+    .manual-12th-modal__actions button {
+        width: 100%;
     }
 }
 
