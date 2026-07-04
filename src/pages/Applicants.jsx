@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -7,6 +7,21 @@ import EmptyState from '../components/ui/EmptyState'
 import InlineMessage from '../components/ui/InlineMessage'
 import PageLoader from '../components/ui/PageLoader'
 import './Applicants.css'
+
+const normalizeStatus = (status) => String(status || '').toLowerCase()
+
+const getStatusClassName = (status) => {
+    const normalizedStatus = normalizeStatus(status).replace(/[^a-z0-9_-]+/g, '-') || 'unknown'
+    return `status-${normalizedStatus}`
+}
+
+const normalizeSortValue = (value) => {
+    if (value === null || value === undefined) {
+        return ''
+    }
+
+    return typeof value === 'string' ? value.toLowerCase() : value
+}
 
 const Applicants = () => {
     const { applicationId } = useParams()
@@ -42,16 +57,8 @@ const Applicants = () => {
     const [statusFilter, setStatusFilter] = useState('')
     const [flaggedFilter, setFlaggedFilter] = useState('')
 
-    useEffect(() => {
-        fetchApplicants()
-    }, [applicationId])
-
-    useEffect(() => {
-        applyFiltersAndSort()
-    }, [applicants, villageFilter, statusFilter, flaggedFilter, sortColumn, sortDirection])
-
-    const applyApplicantsData = (data) => {
-        setApplicants(data.applicants || [])
+    const applyApplicantsData = useCallback((data) => {
+        setApplicants(Array.isArray(data.applicants) ? data.applicants : [])
         setPublishPrelim(Boolean(data.publishPrelim))
         setPublishFinal(Boolean(data.publishFinal))
         setCanStartAudit(Boolean(data.canStartAudit))
@@ -60,9 +67,9 @@ const Applicants = () => {
         setAuditCompleted(Boolean(data.auditCompleted))
         setApplicationClosed(Boolean(data.closed))
         setStatusNotes(Array.isArray(data.status) ? data.status : [])
-    }
+    }, [])
 
-    const fetchApplicants = async ({ showLoader = true } = {}) => {
+    const fetchApplicants = useCallback(async ({ showLoader = true } = {}) => {
         if (showLoader) {
             setLoading(true)
         }
@@ -86,9 +93,13 @@ const Applicants = () => {
                 setLoading(false)
             }
         }
-    }
+    }, [applicationId, applyApplicantsData])
 
-    const applyFiltersAndSort = () => {
+    useEffect(() => {
+        fetchApplicants()
+    }, [fetchApplicants])
+
+    const applyFiltersAndSort = useCallback(() => {
         let result = [...applicants]
 
         // Apply filters
@@ -97,7 +108,7 @@ const Applicants = () => {
         }
 
         if (statusFilter) {
-            result = result.filter(app => app.status.toLowerCase() === statusFilter.toLowerCase())
+            result = result.filter(app => normalizeStatus(app.status) === statusFilter.toLowerCase())
         }
 
         if (flaggedFilter) {
@@ -117,12 +128,9 @@ const Applicants = () => {
             } else if (sortColumn === 'flagged') {
                 aVal = Boolean(aVal)
                 bVal = Boolean(bVal)
-            }
-
-            // String comparison
-            if (typeof aVal === 'string') {
-                aVal = aVal.toLowerCase()
-                bVal = bVal.toLowerCase()
+            } else {
+                aVal = normalizeSortValue(aVal)
+                bVal = normalizeSortValue(bVal)
             }
 
             if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
@@ -132,7 +140,11 @@ const Applicants = () => {
 
         setFilteredApplicants(result)
         setCurrentPage(1) // Reset to first page when filters change
-    }
+    }, [applicants, flaggedFilter, sortColumn, sortDirection, statusFilter, villageFilter])
+
+    useEffect(() => {
+        applyFiltersAndSort()
+    }, [applyFiltersAndSort])
 
     const handleSort = (column) => {
         if (column === 'view') return // Don't sort view column
@@ -403,8 +415,8 @@ const Applicants = () => {
                                         <td>{applicant.merit}</td>
                                         <td>{applicant.verifiedMerit}</td>
                                         <td>
-                        <span className={`status-badge status-${applicant.status.toLowerCase()}`}>
-                          {applicant.status}
+                        <span className={`status-badge ${getStatusClassName(applicant.status)}`}>
+                          {applicant.status || 'Unknown'}
                         </span>
                                         </td>
                                         <td>

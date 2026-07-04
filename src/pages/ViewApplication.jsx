@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createAuthHeaders, fetchJson } from '../lib/api'
+import { createAuthHeaders, fetchJson, toAbsoluteFileUrl } from '../lib/api'
 import { formatDateDisplay } from '../lib/date'
 import { naturalSort } from '../lib/sort'
 import EmptyState from '../components/ui/EmptyState'
@@ -17,11 +17,7 @@ const ViewApplication = () => {
     const [selectedVillage, setSelectedVillage] = useState('')
     const [selectedStatus, setSelectedStatus] = useState('')
 
-    useEffect(() => {
-        fetchApplications()
-    }, [])
-
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async () => {
         try {
             const data = await fetchJson('/zp-staff/applications', {
                 method: 'GET',
@@ -29,19 +25,23 @@ const ViewApplication = () => {
             })
 
             if (data.result && data.data && data.data.applicationList) {
-                setApplications(data.data.applicationList)
+                setApplications(Array.isArray(data.data.applicationList) ? data.data.applicationList : [])
             } else {
                 throw new Error('Invalid response format')
             }
-        } catch (err) {
+        } catch {
             setError('Failed to load applications. Please try again.')
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
-    const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
+    useEffect(() => {
+        fetchApplications()
+    }, [fetchApplications])
+
+    const getStatusColor = (status = '') => {
+        switch (String(status).toLowerCase()) {
             case 'open':
                 return 'status-open'
             case 'closed':
@@ -56,12 +56,16 @@ const ViewApplication = () => {
         }
     }
 
+    const getApplicationVillages = (application) => (
+        Array.isArray(application.villageList) ? application.villageList : []
+    )
+
     const talukaOptions = [...new Set(applications.map(app => app.taluka).filter(Boolean))]
         .sort(naturalSort)
 
     const villageOptions = [
         ...new Set(
-            applications.flatMap(app => Array.isArray(app.villageList) ? app.villageList : []).filter(Boolean)
+            applications.flatMap(app => getApplicationVillages(app)).filter(Boolean)
         )
     ].sort(naturalSort)
 
@@ -69,7 +73,7 @@ const ViewApplication = () => {
         .sort(naturalSort)
 
     const filteredApplications = applications.filter(app => {
-        const villages = Array.isArray(app.villageList) ? app.villageList : []
+        const villages = getApplicationVillages(app)
 
         const matchesTaluka = !selectedTaluka || app.taluka === selectedTaluka
         const matchesVillage = !selectedVillage || villages.includes(selectedVillage)
@@ -91,7 +95,9 @@ const ViewApplication = () => {
     }
 
     const handleViewDetails = (descriptionUrl) => {
-        window.open(descriptionUrl, '_blank')
+        if (descriptionUrl) {
+            window.open(toAbsoluteFileUrl(descriptionUrl), '_blank', 'noopener,noreferrer')
+        }
     }
 
     if (loading) {
@@ -193,7 +199,7 @@ const ViewApplication = () => {
                             <div key={app.id} className="application-card">
                                 <div className="card-banner">
                                     <img
-                                        src={app.bannerImgUrl}
+                                        src={toAbsoluteFileUrl(app.bannerImgUrl)}
                                         alt="Application Banner"
                                         onError={(e) => {
                                             e.target.src = 'https://via.placeholder.com/800x200?text=Banner+Image'
@@ -216,7 +222,7 @@ const ViewApplication = () => {
 
                                         <div className="detail-row">
                                             <span className="detail-label">Village :</span>
-                                            <span className="detail-value">{app.villageList.join(", ")}</span>
+                                            <span className="detail-value">{getApplicationVillages(app).join(', ') || '-'}</span>
                                         </div>
 
                                         <div className="detail-row">
@@ -262,6 +268,7 @@ const ViewApplication = () => {
                                         <button
                                             className="apply-btn btn-view-details"
                                             onClick={() => handleViewDetails(app.descriptionUrl)}
+                                            disabled={!app.descriptionUrl}
                                         >
                                             View Details
                                         </button>

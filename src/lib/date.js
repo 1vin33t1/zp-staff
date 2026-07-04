@@ -1,27 +1,55 @@
-export const convertDateToApi = (dateValue) => {
+const INPUT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const API_DATE_PATTERN = /^\d{2}-\d{2}-\d{4}$/
+const ISO_DATE_PREFIX_PATTERN = /^(\d{4}-\d{2}-\d{2})T/
+
+const parseInputDate = (dateValue) => {
     if (!dateValue) {
         return ''
     }
 
-    const parts = dateValue.split('-')
-    if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`
+    return String(dateValue).trim()
+}
+
+export const convertDateToApi = (dateValue) => {
+    const value = parseInputDate(dateValue)
+
+    if (!value) {
+        return ''
     }
 
-    return dateValue
+    const isoMatch = value.match(ISO_DATE_PREFIX_PATTERN)
+    const normalizedValue = isoMatch ? isoMatch[1] : value
+
+    if (INPUT_DATE_PATTERN.test(normalizedValue)) {
+        const [year, month, day] = normalizedValue.split('-')
+        return `${day}-${month}-${year}`
+    }
+
+    return value
 }
 
 export const convertDateToInput = (dateValue) => {
-    if (!dateValue) {
+    const value = parseInputDate(dateValue)
+
+    if (!value) {
         return ''
     }
 
-    const parts = dateValue.split('-')
-    if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`
+    const isoMatch = value.match(ISO_DATE_PREFIX_PATTERN)
+    if (isoMatch) {
+        return isoMatch[1]
     }
 
-    return dateValue
+    if (INPUT_DATE_PATTERN.test(value)) {
+        return value
+    }
+
+    if (API_DATE_PATTERN.test(value)) {
+        const [day, month, year] = value.split('-')
+        return `${year}-${month}-${day}`
+    }
+
+    return value
 }
 
 export const getTodayDate = () => {
@@ -49,7 +77,18 @@ export const formatDateDisplay = (dateValue, locale = 'en-IN') => {
         return ''
     }
 
-    return new Date(dateValue).toLocaleDateString(locale, {
+    const inputDate = convertDateToInput(dateValue)
+    const date = INPUT_DATE_PATTERN.test(inputDate)
+        ? new Date(...inputDate.split('-').map((part, index) => (
+            index === 1 ? Number(part) - 1 : Number(part)
+        )))
+        : new Date(dateValue)
+
+    if (Number.isNaN(date.getTime())) {
+        return String(dateValue)
+    }
+
+    return date.toLocaleDateString(locale, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',

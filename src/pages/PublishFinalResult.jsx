@@ -164,7 +164,8 @@ const PublishFinalResult = () => {
             })
 
             if (data.result && data.data) {
-                const applicantsData = (data.data.applicants || []).map((candidate, index) => ({
+                const applicantsList = Array.isArray(data.data.applicants) ? data.data.applicants : []
+                const applicantsData = applicantsList.map((candidate, index) => ({
                     ...candidate,
                     _rowKey: `${getVillageName(candidate)}-${candidate.id}-${index}`,
                     _originalIndex: index,
@@ -172,7 +173,9 @@ const PublishFinalResult = () => {
                 }))
 
                 setApplicants(applicantsData)
-                setVacancyCounts(data.data.vacancyCount || {})
+                setVacancyCounts(data.data.vacancyCount && typeof data.data.vacancyCount === 'object'
+                    ? data.data.vacancyCount
+                    : {})
                 setDraftFinalListGenerated(false)
             } else {
                 throw new Error('Invalid response format')
@@ -443,7 +446,10 @@ const PublishFinalResult = () => {
             )
 
             if (data.result && String(data.data).toLowerCase() === 'success') {
-                window.location.reload()
+                setManualEntryCandidate(null)
+                setManualEntryForm(createManualEntryForm())
+                setSuccessMessage('Manual data updated successfully.')
+                await fetchApplicants({ showLoader: false })
             } else {
                 throw new Error('Manual entry failed')
             }

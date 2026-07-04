@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import EmptyState from '../components/ui/EmptyState'
@@ -17,15 +17,7 @@ const ApplicantHistory = () => {
     const [filteredData, setFilteredData] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
 
-    useEffect(() => {
-        fetchHistory()
-    }, [applicationId, applicantId])
-
-    useEffect(() => {
-        filterHistory()
-    }, [searchQuery, historyData])
-
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         try {
             const data = await fetchJson(
                 `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
@@ -36,19 +28,20 @@ const ApplicantHistory = () => {
             )
 
             if (data.result && data.data) {
-                setHistoryData(data.data)
-                setFilteredData(data.data)
+                const nextHistoryData = Array.isArray(data.data) ? data.data : []
+                setHistoryData(nextHistoryData)
+                setFilteredData(nextHistoryData)
             } else {
                 throw new Error('Invalid response format')
             }
-        } catch (err) {
+        } catch {
             setError('Failed to load history. Please try again.')
         } finally {
             setLoading(false)
         }
-    }
+    }, [applicantId, applicationId])
 
-    const filterHistory = () => {
+    const filterHistory = useCallback(() => {
         if (!searchQuery.trim()) {
             setFilteredData(historyData)
             return
@@ -56,10 +49,18 @@ const ApplicantHistory = () => {
 
         const query = searchQuery.toLowerCase()
         const filtered = historyData.filter(message =>
-            message && message.toLowerCase().includes(query)
+            String(message || '').toLowerCase().includes(query)
         )
         setFilteredData(filtered)
-    }
+    }, [historyData, searchQuery])
+
+    useEffect(() => {
+        fetchHistory()
+    }, [fetchHistory])
+
+    useEffect(() => {
+        filterHistory()
+    }, [filterHistory])
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value)
@@ -140,7 +141,7 @@ const ApplicantHistory = () => {
                             {filteredData.map((message, index) => (
                                 <div key={index} className="message-card">
                                     <div className="message-number">#{index + 1}</div>
-                                    <div className="message-content">{message}</div>
+                                    <div className="message-content">{String(message || '')}</div>
                                 </div>
                             ))}
                         </div>

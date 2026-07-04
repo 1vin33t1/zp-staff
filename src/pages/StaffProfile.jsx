@@ -66,7 +66,7 @@ const StaffProfile = () => {
             } else {
                 throw new Error('Invalid response format')
             }
-        } catch (err) {
+        } catch {
             setError('Failed to load profile. Please try again.')
         } finally {
             setLoading(false)
@@ -158,7 +158,7 @@ const StaffProfile = () => {
             } else {
                 throw new Error('Submission failed')
             }
-        } catch (err) {
+        } catch {
             setError('Failed to update profile. Please try again.')
         } finally {
             setSubmitting(false)

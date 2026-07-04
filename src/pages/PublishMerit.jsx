@@ -110,7 +110,8 @@ const PublishMerit = () => {
             })
 
             if (data.result && data.data) {
-                const applicantsData = (data.data.applicants || []).map((candidate, index) => ({
+                const applicantsList = Array.isArray(data.data.applicants) ? data.data.applicants : []
+                const applicantsData = applicantsList.map((candidate, index) => ({
                     ...candidate,
                     _rowKey: `${getVillageName(candidate)}-${candidate.id}-${index}`,
                     _originalIndex: index,

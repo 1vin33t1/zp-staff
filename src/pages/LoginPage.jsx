@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { fetchJson } from '../lib/api'
 import {
@@ -19,7 +19,7 @@ const LoginPage = ({ onLogin }) => {
     const [error, setError] = useState('')
     const [countdown, setCountdown] = useState(0)
     const [emailError, setEmailError] = useState('')
-    const canVerifyRef = useRef(false)
+    const verifyInFlightRef = useRef(false)
 
     if (!redirectRef.current) {
         const queryRedirect = new URLSearchParams(location.search).get('redirect')
@@ -78,24 +78,24 @@ const LoginPage = ({ onLogin }) => {
             } else {
                 setError(data.failureReason || 'Failed to send OTP')
             }
-        } catch (err) {
+        } catch {
             setError('Network error. Please try again.')
         } finally {
             setLoading(false)
         }
     }
 
-    const verifyOTP = async () => {
+    const verifyOTP = useCallback(async () => {
         const otpValue = otp.join('')
         if (otpValue.length !== 4) {
             setError('Please enter complete OTP')
             return
         }
 
-        if (!canVerifyRef.current) {
+        if (verifyInFlightRef.current) {
             return
         }
-        canVerifyRef.current = false
+        verifyInFlightRef.current = true
 
         setLoading(true)
         setError('')
@@ -115,16 +115,15 @@ const LoginPage = ({ onLogin }) => {
             } else {
                 setError(data.failureReason || 'Invalid OTP')
                 setOtp(['', '', '', ''])
-                canVerifyRef.current = false
                 document.getElementById('otp-0')?.focus()
             }
-        } catch (err) {
+        } catch {
             setError('Network error. Please try again.')
-            canVerifyRef.current = false
         } finally {
+            verifyInFlightRef.current = false
             setLoading(false)
         }
-    }
+    }, [email, onLogin, otp])
 
     const handleOtpChange = (index, value) => {
         if (value.length > 1) return
@@ -143,17 +142,18 @@ const LoginPage = ({ onLogin }) => {
     }
 
     useEffect(() => {
-        const completeOtp = otp.join('');
+        const completeOtp = otp.join('')
 
         if (completeOtp.length === 4 && otp.every(d => d !== '')) {
-            canVerifyRef.current = true;
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 verifyOTP()
             }, 200)
-        } else {
-            canVerifyRef.current = false;
+
+            return () => clearTimeout(timer)
         }
-    }, [otp]);
+
+        return undefined
+    }, [otp, verifyOTP])
 
     const handleOtpKeyDown = (index, e) => {
         if (e.key === 'Backspace' && !otp[index] && index > 0) {
@@ -169,18 +169,12 @@ const LoginPage = ({ onLogin }) => {
             setOtp(newOtp)
             setError('')
             document.getElementById('otp-3')?.focus()
-
-            canVerifyRef.current = true
-            setTimeout(() => {
-                verifyOTP()
-            }, 200)
         }
     }
 
     const resendOTP = () => {
         setOtp(['', '', '', ''])
         setError('')
-        canVerifyRef.current = false
         sendOTP()
     }
 
@@ -189,7 +183,7 @@ const LoginPage = ({ onLogin }) => {
         setOtp(['', '', '', ''])
         setError('')
         setEmailError('')
-        canVerifyRef.current = false
+        verifyInFlightRef.current = false
     }
 
     return (

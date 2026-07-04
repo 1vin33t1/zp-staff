@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson, toAbsoluteFileUrl } from '../lib/api'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -43,15 +43,11 @@ const ApplicantDetail = () => {
     const [manual12thSubmitting, setManual12thSubmitting] = useState(false)
     const [manual12thSuccess, setManual12thSuccess] = useState(false)
 
-    useEffect(() => {
-        fetchApplicantData()
-    }, [applicationId, applicantId])
-
-    const applyApplicantData = (data) => {
+    const applyApplicantData = useCallback((data) => {
         setFormData({
             applicationId: data.applicationId,
             userId: data.userId,
-            rows: (data.rows || []).map(row => ({
+            rows: (Array.isArray(data.rows) ? data.rows : []).map(row => ({
                 ...row,
                 statusReason: row.statusReason || '',
                 secondaryDocumentProofUrl: row.secondaryDocumentProofUrl || '',
@@ -66,9 +62,9 @@ const ApplicantDetail = () => {
         setAllowEdit(data.allowEdit !== false)
         setApplicationLocked(Boolean(data.locked))
         setValidationErrors({})
-    }
+    }, [])
 
-    const fetchApplicantData = async ({ showLoader = true } = {}) => {
+    const fetchApplicantData = useCallback(async ({ showLoader = true } = {}) => {
         if (showLoader) {
             setLoading(true)
         }
@@ -95,7 +91,11 @@ const ApplicantDetail = () => {
                 setLoading(false)
             }
         }
-    }
+    }, [applicantId, applicationId, applyApplicantData])
+
+    useEffect(() => {
+        fetchApplicantData()
+    }, [fetchApplicantData])
 
     const handleRowStatusChange = (rowIndex, status) => {
         if (!allowEdit) {
@@ -129,13 +129,17 @@ const ApplicantDetail = () => {
     const calculateOverallStatus = (rows) => {
         // Check if all rows with documents are approved
         const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
-        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve' || row.status === 'Reject' )
+        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve')
 
         if (allApproved) {
             setFormData(prev => ({ ...prev, overallStatus: 'Fully Verified' }))
-        } else if (formData.overallStatus === 'Fully Verified') {
+        } else {
             // Deselect Fully Verified if not all processed
-            setFormData(prev => ({ ...prev, overallStatus: 'Pending' }))
+            setFormData(prev => (
+                prev.overallStatus === 'Fully Verified'
+                    ? { ...prev, overallStatus: 'Pending' }
+                    : prev
+            ))
         }
     }
 
@@ -352,7 +356,7 @@ const ApplicantDetail = () => {
         } else if (valueType === 'image') {
             return (
                 <div className="resume-photo">
-                    <img src={value} alt="profile photo" />
+                    <img src={toAbsoluteFileUrl(value)} alt="profile photo" />
                 </div>
             )
         } else if (valueType === 'doc') {
@@ -495,9 +499,10 @@ const ApplicantDetail = () => {
             if (data.result && data.data === 'success') {
                 setManual12thModalOpen(false)
                 setManual12thSuccess(true)
+                await fetchApplicantData({ showLoader: false })
                 setTimeout(() => {
-                    window.location.reload()
-                }, 1000)
+                    setManual12thSuccess(false)
+                }, 1500)
             } else {
                 throw new Error('Manual 12th update failed')
             }

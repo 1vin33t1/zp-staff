@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiUrl, fetchJson } from '../lib/api'
 import {
@@ -26,8 +26,21 @@ export const useStaffSession = () => {
     const navigate = useNavigate()
     const inactivityTimerRef = useRef(null)
     const refreshTimerRef = useRef(null)
+    const handleLogoutRef = useRef(null)
 
-    const stopActivityMonitoring = () => {
+    const resetActivityTimer = useCallback(() => {
+        setStaffLastActivity()
+
+        if (inactivityTimerRef.current) {
+            clearTimeout(inactivityTimerRef.current)
+        }
+
+        inactivityTimerRef.current = setTimeout(() => {
+            handleLogoutRef.current?.(true)
+        }, ACTIVITY_TIMEOUT_MS)
+    }, [])
+
+    const stopActivityMonitoring = useCallback(() => {
         ACTIVITY_EVENTS.forEach((eventName) => {
             document.removeEventListener(eventName, resetActivityTimer)
         })
@@ -36,24 +49,24 @@ export const useStaffSession = () => {
             clearTimeout(inactivityTimerRef.current)
             inactivityTimerRef.current = null
         }
-    }
+    }, [resetActivityTimer])
 
-    const stopTokenRefresh = () => {
+    const stopTokenRefresh = useCallback(() => {
         if (refreshTimerRef.current) {
             clearInterval(refreshTimerRef.current)
             refreshTimerRef.current = null
         }
-    }
+    }, [])
 
-    const clearSessionState = () => {
+    const clearSessionState = useCallback(() => {
         clearStaffSession()
         setIsAuthenticated(false)
         setUserEmail(null)
         stopActivityMonitoring()
         stopTokenRefresh()
-    }
+    }, [stopActivityMonitoring, stopTokenRefresh])
 
-    const handleLogout = async (callApi = true) => {
+    const handleLogout = useCallback(async (callApi = true) => {
         if (callApi) {
             try {
                 await fetch(apiUrl('/auth/logout/zp-staff'), {
@@ -69,21 +82,13 @@ export const useStaffSession = () => {
         clearStaffPendingRedirect()
         setAuthReady(true)
         navigate('/zp-staff', { replace: true })
-    }
+    }, [clearSessionState, navigate])
 
-    const resetActivityTimer = () => {
-        setStaffLastActivity()
+    useEffect(() => {
+        handleLogoutRef.current = handleLogout
+    }, [handleLogout])
 
-        if (inactivityTimerRef.current) {
-            clearTimeout(inactivityTimerRef.current)
-        }
-
-        inactivityTimerRef.current = setTimeout(() => {
-            handleLogout(true)
-        }, ACTIVITY_TIMEOUT_MS)
-    }
-
-    const startActivityMonitoring = () => {
+    const startActivityMonitoring = useCallback(() => {
         stopActivityMonitoring()
 
         ACTIVITY_EVENTS.forEach((eventName) => {
@@ -91,9 +96,9 @@ export const useStaffSession = () => {
         })
 
         resetActivityTimer()
-    }
+    }, [resetActivityTimer, stopActivityMonitoring])
 
-    const startTokenRefresh = (hitApiImmediately = false) => {
+    const startTokenRefresh = useCallback((hitApiImmediately = false) => {
         const refreshToken = async () => {
             try {
                 const data = await fetchJson('/auth/refresh/zp-staff', {
@@ -111,7 +116,7 @@ export const useStaffSession = () => {
                         setStaffUserInfo(data.meta)
                     }
                 } else {
-                    handleLogout(false)
+                    handleLogoutRef.current?.(false)
                 }
             } catch (error) {
                 console.error('Token refresh failed:', error)
@@ -125,9 +130,9 @@ export const useStaffSession = () => {
         if (!refreshTimerRef.current) {
             refreshTimerRef.current = setInterval(refreshToken, TOKEN_REFRESH_MS)
         }
-    }
+    }, [])
 
-    const handleLogin = (email, accessToken, redirectTo = '/zp-staff/dashboard') => {
+    const handleLogin = useCallback((email, accessToken, redirectTo = '/zp-staff/dashboard') => {
         setStaffAccessToken(accessToken)
         setStaffUserEmail(email)
         setIsAuthenticated(true)
@@ -139,9 +144,9 @@ export const useStaffSession = () => {
         setTimeout(() => {
             clearStaffPendingRedirect()
         }, 1000)
-    }
+    }, [navigate, startActivityMonitoring, startTokenRefresh])
 
-    const getInactivityTime = () => {
+    const getInactivityTime = useCallback(() => {
         const lastActivityString = getStaffLastActivity()
 
         if (isAuthenticated && !lastActivityString) {
@@ -149,8 +154,9 @@ export const useStaffSession = () => {
             return 0
         }
 
-        return Date.now() - new Date(lastActivityString)
-    }
+        const lastActivity = new Date(lastActivityString)
+        return Number.isNaN(lastActivity.getTime()) ? 0 : Date.now() - lastActivity
+    }, [handleLogout, isAuthenticated])
 
     useEffect(() => {
         const lastActivityString = getStaffLastActivity()
@@ -197,7 +203,13 @@ export const useStaffSession = () => {
             stopActivityMonitoring()
             stopTokenRefresh()
         }
-    }, [])
+    }, [
+        clearSessionState,
+        startActivityMonitoring,
+        startTokenRefresh,
+        stopActivityMonitoring,
+        stopTokenRefresh,
+    ])
 
     return {
         getInactivityTime,

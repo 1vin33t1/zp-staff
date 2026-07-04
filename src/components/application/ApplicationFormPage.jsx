@@ -134,8 +134,8 @@ const getGramPanchayatOptions = (anganwadiList, selectedTaluka) => {
         return []
     }
 
-    const filteredList = anganwadiList.filter((item) => item.taluka === selectedTaluka)
-    const gramPanchayats = [...new Set(filteredList.map((item) => item.gramPanchayat))]
+    const filteredList = anganwadiList.filter((item) => item && item.taluka === selectedTaluka)
+    const gramPanchayats = [...new Set(filteredList.map((item) => item.gramPanchayat).filter(Boolean))]
 
     return gramPanchayats.sort(naturalSort)
 }
@@ -146,9 +146,9 @@ const getAnganwadiOptions = (anganwadiList, selectedTaluka, selectedGramPanchaya
     }
 
     const filteredList = anganwadiList.filter((item) => (
-        item.taluka === selectedTaluka && selectedGramPanchayats.includes(item.gramPanchayat)
+        item && item.taluka === selectedTaluka && selectedGramPanchayats.includes(item.gramPanchayat)
     ))
-    const anganwadis = [...new Set(filteredList.map((item) => item.name))]
+    const anganwadis = [...new Set(filteredList.map((item) => item.name).filter(Boolean))]
 
     return anganwadis.sort(naturalSort)
 }
@@ -195,8 +195,8 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                 }
 
                 const nextEligibilityData = {
-                    anganwadiList: data.data.anganwadiList || [],
-                    postedTaluka: data.data.postedTaluka || [],
+                    anganwadiList: Array.isArray(data.data.anganwadiList) ? data.data.anganwadiList : [],
+                    postedTaluka: Array.isArray(data.data.postedTaluka) ? data.data.postedTaluka : [],
                 }
 
                 setEligibilityData(nextEligibilityData)
@@ -211,7 +211,7 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                         anganwadiList: [],
                     }))
                 }
-            } catch (error) {
+            } catch {
                 if (isActive) {
                     setErrorBreaking('Failed to load eligibility data. Please try again.')
                 }
@@ -249,15 +249,19 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
                     id: applicationData.id || '',
                     name: applicationData.name || '',
                     taluka: applicationData.taluka || '',
-                    gramPanchayatList: applicationData.gramPanchayatList || [],
-                    anganwadiList: applicationData.anganwadiList || [],
+                    gramPanchayatList: Array.isArray(applicationData.gramPanchayatList)
+                        ? applicationData.gramPanchayatList
+                        : [],
+                    anganwadiList: Array.isArray(applicationData.anganwadiList)
+                        ? applicationData.anganwadiList
+                        : [],
                     banner: applicationData.banner || '',
                     description: applicationData.description || '',
                     startDate: convertDateToInput(applicationData.startDate) || '',
                     endDate: convertDateToInput(applicationData.endDate) || '',
                     publish: applicationData.publish || false,
                 })
-            } catch (error) {
+            } catch {
                 if (isActive) {
                     setErrorBreaking('Failed to load application data. Please try again.')
                 }
@@ -436,7 +440,7 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
             }
 
             handleInputChange(field, data.data)
-        } catch (error) {
+        } catch {
             setErrorRetry(`Failed to upload ${field}. Please try again.`)
         } finally {
             setUploadingFields((previousValue) => ({
@@ -488,7 +492,7 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
             setTimeout(() => {
                 navigate(copy.successRoute)
             }, 2000)
-        } catch (error) {
+        } catch {
             setErrorRetry(copy.submitErrorMessage)
             setSubmitting(false)
         }
