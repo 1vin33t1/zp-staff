@@ -24,9 +24,10 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
     useEffect(() => {
         if (!isAuthenticated) {
             setUserInfo({})
-            return
+            return undefined
         }
 
+        let active = true
         const cachedUserInfo = getStaffUserInfo() || {}
         setUserInfo(cachedUserInfo)
 
@@ -36,6 +37,12 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
                     method: 'GET',
                     headers: createAuthHeaders(),
                 })
+
+                // Ignore responses that land after logout or a user switch,
+                // so we don't re-persist the previous user's identity.
+                if (!active) {
+                    return
+                }
 
                 if (data.result && data.data) {
                     const nextUserInfo = {
@@ -53,6 +60,10 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
         }
 
         fetchProfile()
+
+        return () => {
+            active = false
+        }
     }, [isAuthenticated, userEmail])
 
     const formatTime = (seconds) => {

@@ -23,9 +23,9 @@ const LoginPage = ({ onLogin }) => {
 
     if (!redirectRef.current) {
         const queryRedirect = new URLSearchParams(location.search).get('redirect')
-        redirectRef.current = location.state?.redirectTo
-            || queryRedirect
-            || getStaffPendingRedirect()
+        const isSafeRedirect = (path) => typeof path === 'string' && path.startsWith('/zp-staff')
+        redirectRef.current = [location.state?.redirectTo, queryRedirect, getStaffPendingRedirect()]
+            .find(isSafeRedirect)
             || '/zp-staff/dashboard'
     }
 
@@ -73,7 +73,10 @@ const LoginPage = ({ onLogin }) => {
 
             if (data.success) {
                 setStep('otp')
-                const waitTime = Math.max(0, Math.floor((data.nextAttemptAt - Date.now()) / 1000))
+                const nextAttemptAt = Number(data.nextAttemptAt)
+                const waitTime = Number.isFinite(nextAttemptAt)
+                    ? Math.max(0, Math.ceil((nextAttemptAt - Date.now()) / 1000))
+                    : 0
                 setCountdown(waitTime)
             } else {
                 setError(data.failureReason || 'Failed to send OTP')
@@ -115,7 +118,10 @@ const LoginPage = ({ onLogin }) => {
             } else {
                 setError(data.failureReason || 'Invalid OTP')
                 setOtp(['', '', '', ''])
-                document.getElementById('otp-0')?.focus()
+                // Defer until the inputs re-enable (loading flips in finally).
+                setTimeout(() => {
+                    document.getElementById('otp-0')?.focus()
+                }, 0)
             }
         } catch {
             setError('Network error. Please try again.')
@@ -162,14 +168,15 @@ const LoginPage = ({ onLogin }) => {
     }
 
     const handleOtpPaste = (e) => {
-        e.preventDefault()
-        const pastedData = e.clipboardData.getData('text').trim()
-        if (/^[0-9]{4}$/.test(pastedData)) {
-            const newOtp = pastedData.split('')
-            setOtp(newOtp)
-            setError('')
-            document.getElementById('otp-3')?.focus()
+        const pastedDigits = e.clipboardData.getData('text').replace(/\D/g, '')
+        if (pastedDigits.length !== 4) {
+            return
         }
+
+        e.preventDefault()
+        setOtp(pastedDigits.split(''))
+        setError('')
+        document.getElementById('otp-3')?.focus()
     }
 
     const resendOTP = () => {

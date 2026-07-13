@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson, toAbsoluteFileUrl } from '../lib/api'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -64,7 +64,13 @@ const ApplicantDetail = () => {
         setValidationErrors({})
     }, [])
 
+    const fetchSeqRef = useRef(0)
+
     const fetchApplicantData = useCallback(async ({ showLoader = true } = {}) => {
+        // Latest request wins: a slow response for a previous applicant must
+        // not populate the form shown under the current URL.
+        const requestId = ++fetchSeqRef.current
+
         if (showLoader) {
             setLoading(true)
         }
@@ -78,6 +84,10 @@ const ApplicantDetail = () => {
                 },
             )
 
+            if (requestId !== fetchSeqRef.current) {
+                return
+            }
+
             if (data.result && data.data) {
                 setError('')
                 applyApplicantData(data.data)
@@ -85,9 +95,11 @@ const ApplicantDetail = () => {
                 throw new Error('Invalid response format')
             }
         } catch {
-            setError('Failed to load applicant data. Please try again.')
+            if (requestId === fetchSeqRef.current) {
+                setError('Failed to load applicant data. Please try again.')
+            }
         } finally {
-            if (showLoader) {
+            if (showLoader && requestId === fetchSeqRef.current) {
                 setLoading(false)
             }
         }
@@ -97,20 +109,31 @@ const ApplicantDetail = () => {
         fetchApplicantData()
     }, [fetchApplicantData])
 
+    const redirectTimerRef = useRef(null)
+
+    useEffect(() => () => {
+        if (redirectTimerRef.current) {
+            clearTimeout(redirectTimerRef.current)
+        }
+    }, [])
+
     const handleRowStatusChange = (rowIndex, status) => {
         if (!allowEdit) {
             return
         }
 
-        const updatedRows = [...formData.rows]
-        const previousStatus = updatedRows[rowIndex].status
-        updatedRows[rowIndex].status = status
-
-        if (status === 'Reject' && previousStatus !== 'Reject') {
-            updatedRows[rowIndex].statusReason = ''
-        } else if (status !== 'Reject') {
-            updatedRows[rowIndex].statusReason = ''
-        }
+        const previousStatus = formData.rows[rowIndex].status
+        const updatedRows = formData.rows.map((row, index) => (
+            index === rowIndex
+                ? {
+                    ...row,
+                    status,
+                    statusReason: status === 'Reject' && previousStatus === 'Reject'
+                        ? row.statusReason
+                        : '',
+                }
+                : row
+        ))
 
         setFormData({ ...formData, rows: updatedRows })
 
@@ -132,7 +155,12 @@ const ApplicantDetail = () => {
         const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve')
 
         if (allApproved) {
-            setFormData(prev => ({ ...prev, overallStatus: 'Fully Verified' }))
+            // Never override an explicit rejection with the auto status.
+            setFormData(prev => (
+                prev.overallStatus === 'Reject Candidate'
+                    ? prev
+                    : { ...prev, overallStatus: 'Fully Verified' }
+            ))
         } else {
             // Deselect Fully Verified if not all processed
             setFormData(prev => (
@@ -171,8 +199,9 @@ const ApplicantDetail = () => {
             return
         }
 
-        const updatedRows = [...formData.rows]
-        updatedRows[rowIndex][field] = value
+        const updatedRows = formData.rows.map((row, index) => (
+            index === rowIndex ? { ...row, [field]: value } : row
+        ))
         setFormData({ ...formData, rows: updatedRows })
 
         // Clear validation error for this field
@@ -253,7 +282,7 @@ const ApplicantDetail = () => {
 
             if (String(data.data).toLowerCase() === 'success') {
                 setSubmitSuccess(true)
-                setTimeout(() => {
+                redirectTimerRef.current = setTimeout(() => {
                     navigate(`/zp-staff/${applicationId}/applicants`)
                 }, 3000)
             } else {
@@ -462,7 +491,8 @@ const ApplicantDetail = () => {
             && Number.isFinite(earned)
             && Number.isFinite(total)
             && earned >= 0
-            && total > earned
+            && total > 0
+            && total >= earned
     }
 
     const handleManual12thSubmit = async (event) => {
@@ -474,7 +504,7 @@ const ApplicantDetail = () => {
         }
 
         if (!isManual12thFormValid()) {
-            setManual12thError('Enter valid marks. Total marks must be greater than earned marks.')
+            setManual12thError('Enter valid marks. Earned marks cannot exceed total marks.')
             return
         }
 

@@ -142,7 +142,7 @@ const StaffProfile = () => {
                 body: JSON.stringify(payload)
             })
 
-            if (data.result && data.data && data.data === "success") {
+            if (data.result && String(data.data).toLowerCase() === 'success') {
                 setSubmitSuccess(true)
 
                 // Update profile data

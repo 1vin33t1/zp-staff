@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import EmptyState from '../components/ui/EmptyState'
@@ -17,7 +17,13 @@ const ApplicantHistory = () => {
     const [filteredData, setFilteredData] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
 
+    const fetchSeqRef = useRef(0)
+
     const fetchHistory = useCallback(async () => {
+        // Latest request wins across param changes on the shared route.
+        const requestId = ++fetchSeqRef.current
+        setLoading(true)
+
         try {
             const data = await fetchJson(
                 `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicantId)}/history`,
@@ -27,6 +33,10 @@ const ApplicantHistory = () => {
                 },
             )
 
+            if (requestId !== fetchSeqRef.current) {
+                return
+            }
+
             if (data.result && data.data) {
                 const nextHistoryData = Array.isArray(data.data) ? data.data : []
                 setHistoryData(nextHistoryData)
@@ -35,9 +45,13 @@ const ApplicantHistory = () => {
                 throw new Error('Invalid response format')
             }
         } catch {
-            setError('Failed to load history. Please try again.')
+            if (requestId === fetchSeqRef.current) {
+                setError('Failed to load history. Please try again.')
+            }
         } finally {
-            setLoading(false)
+            if (requestId === fetchSeqRef.current) {
+                setLoading(false)
+            }
         }
     }, [applicantId, applicationId])
 

@@ -739,7 +739,12 @@ const PublishFinalResult = () => {
                             <input
                                 type="file"
                                 accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={(event) => handleSignedCopyUpload(event.target.files[0])}
+                                onChange={(event) => {
+                                    const file = event.target.files[0]
+                                    // Clear so re-selecting the same file fires onChange again.
+                                    event.target.value = ''
+                                    handleSignedCopyUpload(file)
+                                }}
                                 disabled={uploadingSignedCopy}
                             />
                         </label>
@@ -768,7 +773,11 @@ const PublishFinalResult = () => {
                                 <button className="publish-btn" onClick={() => setTakrarComplete(true)}>
                                     YES
                                 </button>
-                                <button className="secondary-btn" type="button">
+                                <button
+                                    className="secondary-btn"
+                                    type="button"
+                                    onClick={() => navigate(`/zp-staff/${applicationId}/applicants`)}
+                                >
                                     NO
                                 </button>
                             </div>

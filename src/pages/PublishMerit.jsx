@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -260,7 +260,13 @@ const PublishMerit = () => {
         }))
     }
 
+    const fullListSeqRef = useRef(0)
+
     const handleViewFullList = async (village) => {
+        // Latest request wins: a slow response for a previously clicked
+        // village must not render under the current village's header.
+        const requestId = ++fullListSeqRef.current
+
         setFullListVillage(village)
         setShowFullList(true)
         setFullListPage(1)
@@ -275,15 +281,23 @@ const PublishMerit = () => {
                 headers: createAuthHeaders(),
             })
 
+            if (requestId !== fullListSeqRef.current) {
+                return
+            }
+
             if (data.result && Array.isArray(data.data)) {
                 setFullListRows(data.data)
             } else {
                 throw new Error('Invalid response format')
             }
         } catch {
-            setFullListError('Failed to load full merit list. Please try again.')
+            if (requestId === fullListSeqRef.current) {
+                setFullListError('Failed to load full merit list. Please try again.')
+            }
         } finally {
-            setFullListLoading(false)
+            if (requestId === fullListSeqRef.current) {
+                setFullListLoading(false)
+            }
         }
     }
 

@@ -113,7 +113,12 @@ const FileUploadField = ({
             <input
                 type="file"
                 id={id}
-                onChange={(event) => onUpload(event.target.files?.[0])}
+                onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    // Clear so re-selecting the same file fires onChange again.
+                    event.target.value = ''
+                    onUpload(file)
+                }}
                 accept={accept}
                 disabled={isUploading || isDisabled}
             />

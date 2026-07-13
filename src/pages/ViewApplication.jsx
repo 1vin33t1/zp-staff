@@ -8,6 +8,13 @@ import InlineMessage from '../components/ui/InlineMessage'
 import PageLoader from '../components/ui/PageLoader'
 import './ViewApplication.css'
 
+const FALLBACK_BANNER = `data:image/svg+xml;utf8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200">'
+    + '<rect width="800" height="200" fill="#e2e8f0"/>'
+    + '<text x="400" y="106" font-family="sans-serif" font-size="20" fill="#64748b" text-anchor="middle">Banner Image</text>'
+    + '</svg>',
+)}`
+
 const ViewApplication = () => {
     const navigate = useNavigate()
     const [applications, setApplications] = useState([])
@@ -199,10 +206,12 @@ const ViewApplication = () => {
                             <div key={app.id} className="application-card">
                                 <div className="card-banner">
                                     <img
-                                        src={toAbsoluteFileUrl(app.bannerImgUrl)}
+                                        src={toAbsoluteFileUrl(app.bannerImgUrl) || FALLBACK_BANNER}
                                         alt="Application Banner"
                                         onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/800x200?text=Banner+Image'
+                                            if (e.target.src !== FALLBACK_BANNER) {
+                                                e.target.src = FALLBACK_BANNER
+                                            }
                                         }}
                                     />
                                 </div>

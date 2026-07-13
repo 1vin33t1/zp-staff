@@ -40,7 +40,8 @@ function App() {
         { path: '/zp-staff/:applicationId/publish-final-result', element: <PublishFinalResult /> },
         { path: '/zp-staff/:applicationId/applicants/:applicantId/history', element: <ApplicantHistory /> },
     ]
-    const loginRedirect = new URLSearchParams(location.search).get('redirect')
+    const redirectParam = new URLSearchParams(location.search).get('redirect')
+    const loginRedirect = redirectParam && redirectParam.startsWith('/zp-staff') ? redirectParam : null
 
     if (!authReady) {
         return (

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -69,7 +69,13 @@ const Applicants = () => {
         setStatusNotes(Array.isArray(data.status) ? data.status : [])
     }, [])
 
+    const fetchSeqRef = useRef(0)
+
     const fetchApplicants = useCallback(async ({ showLoader = true } = {}) => {
+        // Latest request wins: a slow response for a previous applicationId
+        // (or an older refetch) must not overwrite newer data.
+        const requestId = ++fetchSeqRef.current
+
         if (showLoader) {
             setLoading(true)
         }
@@ -80,6 +86,10 @@ const Applicants = () => {
                 headers: createAuthHeaders(),
             })
 
+            if (requestId !== fetchSeqRef.current) {
+                return
+            }
+
             if (data.result && data.data) {
                 setError('')
                 applyApplicantsData(data.data)
@@ -87,9 +97,11 @@ const Applicants = () => {
                 throw new Error('Invalid response format')
             }
         } catch {
-            setError('Failed to load applicants. Please try again.')
+            if (requestId === fetchSeqRef.current) {
+                setError('Failed to load applicants. Please try again.')
+            }
         } finally {
-            if (showLoader) {
+            if (showLoader && requestId === fetchSeqRef.current) {
                 setLoading(false)
             }
         }
@@ -139,12 +151,17 @@ const Applicants = () => {
         })
 
         setFilteredApplicants(result)
-        setCurrentPage(1) // Reset to first page when filters change
     }, [applicants, flaggedFilter, sortColumn, sortDirection, statusFilter, villageFilter])
 
     useEffect(() => {
         applyFiltersAndSort()
     }, [applyFiltersAndSort])
+
+    // Reset to the first page only when the user changes filters or sorting,
+    // not when the applicant list is silently refetched.
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [villageFilter, statusFilter, flaggedFilter, sortColumn, sortDirection])
 
     const handleSort = (column) => {
         if (column === 'view') return // Don't sort view column
@@ -243,21 +260,22 @@ const Applicants = () => {
         navigate(`/zp-staff/${applicationId}/applicants/${applicantId}`)
     }
 
-    // Pagination calculations
+    // Pagination calculations (clamp in case the list shrank under us)
     const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
+    const safePage = Math.min(currentPage, Math.max(totalPages, 1))
+    const startIndex = (safePage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     const currentApplicants = filteredApplicants.slice(startIndex, endIndex)
 
     const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(currentPage + 1)
+        if (safePage < totalPages) {
+            setCurrentPage(safePage + 1)
         }
     }
 
     const handlePrevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(currentPage - 1)
+        if (safePage > 1) {
+            setCurrentPage(safePage - 1)
         }
     }
 
@@ -378,9 +396,7 @@ const Applicants = () => {
                             <table className="applicants-table">
                                 <thead>
                                 <tr>
-                                    <th onClick={() => handleSort('sno')} className="sortable">
-                                        S.NO {getSortIcon('sno')}
-                                    </th>
+                                    <th>S.NO</th>
                                     <th onClick={() => handleSort('id')} className="sortable">
                                         ID {getSortIcon('id')}
                                     </th>
@@ -443,19 +459,19 @@ const Applicants = () => {
                             <div className="pagination">
                                 <button
                                     onClick={handlePrevPage}
-                                    disabled={currentPage === 1}
+                                    disabled={safePage === 1}
                                     className="pagination-btn"
                                 >
                                     Previous
                                 </button>
 
                                 <span className="pagination-info">
-                  Page {currentPage} of {totalPages}
+                  Page {safePage} of {totalPages}
                 </span>
 
                                 <button
                                     onClick={handleNextPage}
-                                    disabled={currentPage === totalPages}
+                                    disabled={safePage === totalPages}
                                     className="pagination-btn"
                                 >
                                     Next

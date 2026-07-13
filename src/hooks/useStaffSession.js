@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiUrl, fetchJson } from '../lib/api'
+import { apiUrl } from '../lib/api'
 import {
     clearStaffPendingRedirect,
     clearStaffSession,
@@ -101,13 +101,25 @@ export const useStaffSession = () => {
     const startTokenRefresh = useCallback((hitApiImmediately = false) => {
         const refreshToken = async () => {
             try {
-                const data = await fetchJson('/auth/refresh/zp-staff', {
+                const response = await fetch(apiUrl('/auth/refresh/zp-staff'), {
                     method: 'POST',
                     credentials: 'include',
                 })
 
+                if (response.status === 401 || response.status === 403) {
+                    handleLogoutRef.current?.(false)
+                    return
+                }
+
+                const data = await response.json()
+
+                // The user may have logged out while this request was in
+                // flight; persisting the response would resurrect the session.
+                if (!getStaffAccessToken()) {
+                    return
+                }
+
                 if (data.accessToken) {
-                    setStaffLastActivity()
                     setStaffAccessToken(data.accessToken)
                     setStaffUserEmail(data.user)
                     setStaffLastRefresh()
