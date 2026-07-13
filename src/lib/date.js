@@ -1,6 +1,13 @@
 const INPUT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const API_DATE_PATTERN = /^\d{2}-\d{2}-\d{4}$/
-const ISO_DATE_PREFIX_PATTERN = /^(\d{4}-\d{2}-\d{2})T/
+const ISO_DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T/
+
+const IST_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+})
 
 const parseInputDate = (dateValue) => {
     if (!dateValue) {
@@ -10,6 +17,18 @@ const parseInputDate = (dateValue) => {
     return String(dateValue).trim()
 }
 
+// Backend timestamps are UTC (e.g. "2026-07-15T18:30:00Z" == midnight IST the next day),
+// so the date part must be derived after converting to India time, not by slicing the string.
+const toIstDateInputString = (isoDateTime) => {
+    const date = new Date(isoDateTime)
+
+    if (Number.isNaN(date.getTime())) {
+        return isoDateTime
+    }
+
+    return IST_DATE_FORMATTER.format(date)
+}
+
 export const convertDateToApi = (dateValue) => {
     const value = parseInputDate(dateValue)
 
@@ -17,8 +36,7 @@ export const convertDateToApi = (dateValue) => {
         return ''
     }
 
-    const isoMatch = value.match(ISO_DATE_PREFIX_PATTERN)
-    const normalizedValue = isoMatch ? isoMatch[1] : value
+    const normalizedValue = ISO_DATETIME_PATTERN.test(value) ? toIstDateInputString(value) : value
 
     if (INPUT_DATE_PATTERN.test(normalizedValue)) {
         const [year, month, day] = normalizedValue.split('-')
@@ -35,9 +53,8 @@ export const convertDateToInput = (dateValue) => {
         return ''
     }
 
-    const isoMatch = value.match(ISO_DATE_PREFIX_PATTERN)
-    if (isoMatch) {
-        return isoMatch[1]
+    if (ISO_DATETIME_PATTERN.test(value)) {
+        return toIstDateInputString(value)
     }
 
     if (INPUT_DATE_PATTERN.test(value)) {
