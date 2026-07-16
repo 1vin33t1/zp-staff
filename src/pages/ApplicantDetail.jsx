@@ -150,11 +150,11 @@ const ApplicantDetail = () => {
     }
 
     const calculateOverallStatus = (rows) => {
-        // Check if all rows with documents are approved
+        // Check if all rows with documents have been processed (approved or rejected)
         const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
-        const allApproved = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve')
+        const allProcessed = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve' || row.status === 'Reject')
 
-        if (allApproved) {
+        if (allProcessed) {
             // Never override an explicit rejection with the auto status.
             setFormData(prev => (
                 prev.overallStatus === 'Reject Candidate'
