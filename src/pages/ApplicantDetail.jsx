@@ -7,6 +7,18 @@ import PageLoader from '../components/ui/PageLoader'
 import PageSuccessState from '../components/ui/PageSuccessState'
 import './ApplicantDetail.css'
 
+// Derives the auto overall status from row statuses. Never overrides an explicit rejection.
+const deriveOverallStatus = (rows, currentOverallStatus) => {
+    const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
+    const allProcessed = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve' || row.status === 'Reject')
+
+    if (allProcessed) {
+        return currentOverallStatus === 'Reject Candidate' ? currentOverallStatus : 'Fully Verified'
+    }
+
+    return currentOverallStatus === 'Fully Verified' ? 'Pending' : currentOverallStatus
+}
+
 const ApplicantDetail = () => {
     const { applicationId, applicantId } = useParams()
     const navigate = useNavigate()
@@ -43,16 +55,31 @@ const ApplicantDetail = () => {
     const [manual12thSubmitting, setManual12thSubmitting] = useState(false)
     const [manual12thSuccess, setManual12thSuccess] = useState(false)
 
+    // Auto-verify only kicks in for applicants that arrived Pending from the backend;
+    // it must never touch a status the backend already finalized (e.g. Reject Candidate).
+    const initialOverallStatusRef = useRef('Pending')
+
     const applyApplicantData = useCallback((data) => {
+        const backendOverallStatus = data.overallStatus || 'Pending'
+        initialOverallStatusRef.current = backendOverallStatus
+
+        const rows = (Array.isArray(data.rows) ? data.rows : []).map(row => ({
+            ...row,
+            statusReason: row.statusReason || '',
+            secondaryDocumentProofUrl: row.secondaryDocumentProofUrl || '',
+        }))
+
+        // Reflect the auto Fully Verified status immediately if the rows are already
+        // all processed, instead of waiting for the auditor to touch a row button.
+        const overallStatus = backendOverallStatus === 'Pending'
+            ? deriveOverallStatus(rows, backendOverallStatus)
+            : backendOverallStatus
+
         setFormData({
             applicationId: data.applicationId,
             userId: data.userId,
-            rows: (Array.isArray(data.rows) ? data.rows : []).map(row => ({
-                ...row,
-                statusReason: row.statusReason || '',
-                secondaryDocumentProofUrl: row.secondaryDocumentProofUrl || '',
-            })),
-            overallStatus: data.overallStatus || 'Pending',
+            rows,
+            overallStatus,
             overallStatusComment: data.overallStatusComment || '',
             sendEmail: false,
             flagRemark: data.flagRemark || '',
@@ -150,25 +177,15 @@ const ApplicantDetail = () => {
     }
 
     const calculateOverallStatus = (rows) => {
-        // Check if all rows with documents have been processed (approved or rejected)
-        const rowsWithDocs = rows.filter(row => row.documentProofUrl && row.documentProofUrl.trim() !== '')
-        const allProcessed = rowsWithDocs.length > 0 && rowsWithDocs.every(row => row.status === 'Approve' || row.status === 'Reject')
-
-        if (allProcessed) {
-            // Never override an explicit rejection with the auto status.
-            setFormData(prev => (
-                prev.overallStatus === 'Reject Candidate'
-                    ? prev
-                    : { ...prev, overallStatus: 'Fully Verified' }
-            ))
-        } else {
-            // Deselect Fully Verified if not all processed
-            setFormData(prev => (
-                prev.overallStatus === 'Fully Verified'
-                    ? { ...prev, overallStatus: 'Pending' }
-                    : prev
-            ))
+        // Only auto-toggle for applicants that started out Pending from the backend.
+        if (initialOverallStatusRef.current !== 'Pending') {
+            return
         }
+
+        setFormData(prev => {
+            const overallStatus = deriveOverallStatus(rows, prev.overallStatus)
+            return overallStatus === prev.overallStatus ? prev : { ...prev, overallStatus }
+        })
     }
 
     const handleOverallStatusChange = (status) => {
@@ -213,13 +230,16 @@ const ApplicantDetail = () => {
         }
     }
 
-    const validateForm = () => {
+    const validateForm = (overallStatus = formData.overallStatus) => {
         const errors = {}
 
         // Validate each row (only rows with documents need status)
         formData.rows.forEach((row, index) => {
-            // Only validate status if document exists
-            if (row.documentProofUrl && row.documentProofUrl.trim() !== '') {
+            const hasDoc = row.documentProofUrl && row.documentProofUrl.trim() !== ''
+            // Not applicable to the applicant, so it's exempt from requiring a status.
+            const notApplicable = row.status === 'Not Verified' && row.value1 === 'No'
+
+            if (hasDoc && !notApplicable) {
                 // Check if status is selected
                 if (!row.status) {
                     errors[`row-${index}-status`] = 'Please select a status'
@@ -234,7 +254,7 @@ const ApplicantDetail = () => {
         })
 
         // Validate overall status comment
-        if ((formData.overallStatus === 'Reject Candidate') &&
+        if ((overallStatus === 'Reject Candidate') &&
             (!formData.overallStatusComment || formData.overallStatusComment.trim().length < 20)) {
             errors['overallStatusComment'] = 'Please provide a comment (minimum 20 characters)'
         }
@@ -249,7 +269,18 @@ const ApplicantDetail = () => {
             return
         }
 
-        if (!validateForm()) {
+        // Recompute in case the applicant's rows were already fully processed and the
+        // auditor never touched a row status button, which would otherwise leave the
+        // overall status stuck at the backend's original "Pending".
+        const overallStatus = initialOverallStatusRef.current === 'Pending'
+            ? deriveOverallStatus(formData.rows, formData.overallStatus)
+            : formData.overallStatus
+
+        if (overallStatus !== formData.overallStatus) {
+            setFormData(prev => ({ ...prev, overallStatus }))
+        }
+
+        if (!validateForm(overallStatus)) {
             setError('Please fix all validation errors before submitting')
             // Scroll to action buttons area
             const actionButtons = document.querySelector('.action-section')
