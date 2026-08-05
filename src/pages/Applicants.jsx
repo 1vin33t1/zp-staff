@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createAuthHeaders, fetchJson } from '../lib/api'
+import { getApplicantsFilters, setApplicantsFilters } from '../lib/authStorage'
 import ConfirmModal from '../components/ui/ConfirmModal'
 import { naturalSort } from '../lib/sort'
 import EmptyState from '../components/ui/EmptyState'
@@ -52,10 +53,11 @@ const Applicants = () => {
     const [sortColumn, setSortColumn] = useState('id')
     const [sortDirection, setSortDirection] = useState('asc')
 
-    // Filters
-    const [villageFilter, setVillageFilter] = useState('')
-    const [statusFilter, setStatusFilter] = useState('')
-    const [flaggedFilter, setFlaggedFilter] = useState('')
+    // Filters - restored from storage so they survive navigating away to an
+    // applicant's detail page and back; cleared on logout via clearStaffSession.
+    const [villageFilter, setVillageFilter] = useState(() => getApplicantsFilters(applicationId)?.villageFilter || '')
+    const [statusFilter, setStatusFilter] = useState(() => getApplicantsFilters(applicationId)?.statusFilter || '')
+    const [flaggedFilter, setFlaggedFilter] = useState(() => getApplicantsFilters(applicationId)?.flaggedFilter || '')
 
     const applyApplicantsData = useCallback((data) => {
         setApplicants(Array.isArray(data.applicants) ? data.applicants : [])
@@ -162,6 +164,10 @@ const Applicants = () => {
     useEffect(() => {
         setCurrentPage(1)
     }, [villageFilter, statusFilter, flaggedFilter, sortColumn, sortDirection])
+
+    useEffect(() => {
+        setApplicantsFilters(applicationId, { villageFilter, statusFilter, flaggedFilter })
+    }, [applicationId, villageFilter, statusFilter, flaggedFilter])
 
     const handleSort = (column) => {
         if (column === 'view') return // Don't sort view column

@@ -5,6 +5,7 @@ const STAFF_STORAGE_KEYS = {
     lastRefresh: 'staffLastRefresh',
     userInfo: 'staffUserInfo',
     pendingRedirect: 'staffPendingRedirect',
+    applicantsFilters: 'staffApplicantsFilters',
 }
 
 const setStorageValue = (key, value) => {
@@ -76,12 +77,42 @@ export const clearStaffPendingRedirect = () => {
     localStorage.removeItem(STAFF_STORAGE_KEYS.pendingRedirect)
 }
 
+// Keyed by applicationId so filters from one application's applicant list
+// don't leak into another's.
+export const getApplicantsFilters = (applicationId) => {
+    const rawValue = localStorage.getItem(STAFF_STORAGE_KEYS.applicantsFilters)
+    if (!rawValue) {
+        return null
+    }
+
+    try {
+        return JSON.parse(rawValue)[applicationId] || null
+    } catch {
+        return null
+    }
+}
+
+export const setApplicantsFilters = (applicationId, filters) => {
+    const rawValue = localStorage.getItem(STAFF_STORAGE_KEYS.applicantsFilters)
+    let allFilters = {}
+
+    try {
+        allFilters = rawValue ? JSON.parse(rawValue) : {}
+    } catch {
+        allFilters = {}
+    }
+
+    allFilters[applicationId] = filters
+    localStorage.setItem(STAFF_STORAGE_KEYS.applicantsFilters, JSON.stringify(allFilters))
+}
+
 export const clearStaffSession = () => {
     localStorage.removeItem(STAFF_STORAGE_KEYS.accessToken)
     localStorage.removeItem(STAFF_STORAGE_KEYS.userEmail)
     localStorage.removeItem(STAFF_STORAGE_KEYS.lastActivity)
     localStorage.removeItem(STAFF_STORAGE_KEYS.lastRefresh)
     localStorage.removeItem(STAFF_STORAGE_KEYS.userInfo)
+    localStorage.removeItem(STAFF_STORAGE_KEYS.applicantsFilters)
 }
 
 export { STAFF_STORAGE_KEYS }
