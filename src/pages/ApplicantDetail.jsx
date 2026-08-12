@@ -534,6 +534,11 @@ const ApplicantDetail = () => {
             return
         }
 
+        if (auditor) {
+            setManual12thError('Auditors cannot edit 12th marks.')
+            return
+        }
+
         if (!isManual12thFormValid()) {
             setManual12thError('Enter valid marks. Earned marks cannot exceed total marks.')
             return
@@ -706,7 +711,7 @@ const ApplicantDetail = () => {
                                                 📄 View Document
                                             </button>
                                         )}
-                                        {!applicationLocked && is12thMarksRow(row) && (
+                                        {!applicationLocked && !auditor && is12thMarksRow(row) && (
                                             <button
                                                 className="document-btn edit-12th-marks-btn"
                                                 onClick={() => openManual12thModal(row)}
