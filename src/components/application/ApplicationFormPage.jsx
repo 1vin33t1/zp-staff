@@ -431,6 +431,14 @@ const ApplicationFormPage = ({ mode, applicationId = null }) => {
             return
         }
 
+        if (field === 'banner' && !file.type.startsWith('image/')) {
+            setValidationErrors((previousValue) => ({
+                ...previousValue,
+                banner: 'Only image files are allowed for banner',
+            }))
+            return
+        }
+
         setUploadingFields((previousValue) => ({
             ...previousValue,
             [field]: true,
