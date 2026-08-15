@@ -44,6 +44,7 @@ const Applicants = () => {
     const [showAuditDisclaimer, setShowAuditDisclaimer] = useState(false)
     const [startingAudit, setStartingAudit] = useState(false)
     const [completingAudit, setCompletingAudit] = useState(false)
+    const [markLoadingIds, setMarkLoadingIds] = useState(() => new Set())
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
@@ -266,6 +267,43 @@ const Applicants = () => {
         navigate(`/zp-staff/${applicationId}/applicants/${applicantId}`)
     }
 
+    const handleMarkToggle = async (applicant) => {
+        if (markLoadingIds.has(applicant.id)) {
+            return
+        }
+
+        const action = applicant.markStatus ? 'unmark' : 'mark'
+
+        setMarkLoadingIds(previousValue => new Set(previousValue).add(applicant.id))
+        setError('')
+
+        try {
+            const data = await fetchJson(
+                `/zp-staff/${applicationId}/applicants/${encodeURIComponent(applicant.id)}/${action}`,
+                {
+                    method: 'POST',
+                    headers: createAuthHeaders(),
+                },
+            )
+
+            if (data.result && data.data === 'success') {
+                setApplicants(previousValue => previousValue.map(item => (
+                    item.id === applicant.id ? { ...item, markStatus: !applicant.markStatus } : item
+                )))
+            } else {
+                throw new Error(`${action} failed`)
+            }
+        } catch {
+            setError(`Failed to ${action} this candidate. Please try again.`)
+        } finally {
+            setMarkLoadingIds(previousValue => {
+                const next = new Set(previousValue)
+                next.delete(applicant.id)
+                return next
+            })
+        }
+    }
+
     // Pagination calculations (clamp in case the list shrank under us)
     const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage)
     const safePage = Math.min(currentPage, Math.max(totalPages, 1))
@@ -424,6 +462,7 @@ const Applicants = () => {
                                     <th onClick={() => handleSort('flagged')} className="sortable">
                                         Flag {getSortIcon('flagged')}
                                     </th>
+                                    <th>Mark</th>
                                     <th>View</th>
                                 </tr>
                                 </thead>
@@ -445,6 +484,16 @@ const Applicants = () => {
                                             {applicant.flagged && (
                                                 <span className="flagged-tag">Flagged</span>
                                             )}
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                className="mark-checkbox"
+                                                checked={Boolean(applicant.markStatus)}
+                                                onChange={() => handleMarkToggle(applicant)}
+                                                disabled={markLoadingIds.has(applicant.id)}
+                                                aria-label={applicant.markStatus ? 'Unmark applicant' : 'Mark applicant'}
+                                            />
                                         </td>
                                         <td>
                                             <button
