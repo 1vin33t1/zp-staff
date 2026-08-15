@@ -451,3 +451,22 @@
         width: 100%;
     }
 }
+
+/* Desktop only: fit table to container width instead of horizontal scroll */
+@media (min-width: 769px) {
+    .table-container {
+        overflow-x: hidden;
+    }
+
+    .applicants-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .applicants-table th,
+    .applicants-table td {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+}
