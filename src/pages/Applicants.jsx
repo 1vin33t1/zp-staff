@@ -462,7 +462,7 @@ const Applicants = () => {
                                     <th onClick={() => handleSort('flagged')} className="sortable">
                                         Flag {getSortIcon('flagged')}
                                     </th>
-                                    <th>Mark</th>
+                                    {auditor && <th>Mark</th>}
                                     <th>View</th>
                                 </tr>
                                 </thead>
@@ -485,16 +485,18 @@ const Applicants = () => {
                                                 <span className="flagged-tag">Flagged</span>
                                             )}
                                         </td>
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                className="mark-checkbox"
-                                                checked={Boolean(applicant.markStatus)}
-                                                onChange={() => handleMarkToggle(applicant)}
-                                                disabled={markLoadingIds.has(applicant.id)}
-                                                aria-label={applicant.markStatus ? 'Unmark applicant' : 'Mark applicant'}
-                                            />
-                                        </td>
+                                        {auditor && (
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    className="mark-checkbox"
+                                                    checked={Boolean(applicant.markStatus)}
+                                                    onChange={() => handleMarkToggle(applicant)}
+                                                    disabled={markLoadingIds.has(applicant.id)}
+                                                    aria-label={applicant.markStatus ? 'Unmark applicant' : 'Mark applicant'}
+                                                />
+                                            </td>
+                                        )}
                                         <td>
                                             <button
                                                 className="view-btn"
