@@ -26,8 +26,24 @@ const Dashboard = () => {
             icon: '👤',
             route: '/zp-staff/profile',
             color: '#f59e0b'
+        },
+        {
+            title: 'Demo',
+            description: 'Watch a demo of the portal',
+            icon: '🎥',
+            href: 'https://files.gramsamruddhi.in/stfhelp',
+            color: '#8b5cf6'
         }
     ]
+
+    const handleCardClick = (card) => {
+        if (card.href) {
+            window.open(card.href, '_blank', 'noopener,noreferrer')
+            return
+        }
+
+        navigate(card.route)
+    }
 
     return (
         <div className="dashboard-container">
@@ -42,7 +58,7 @@ const Dashboard = () => {
                         <div
                             key={index}
                             className="dashboard-card"
-                            onClick={() => navigate(card.route)}
+                            onClick={() => handleCardClick(card)}
                             style={{ '--card-color': card.color }}
                         >
                             <div className="card-icon">{card.icon}</div>

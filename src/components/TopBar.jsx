@@ -106,6 +106,14 @@ const TopBar = ({ isAuthenticated, userEmail, onLogout, getInactivityTime }) => 
                 </nav>
 
                 <div className="topbar-right">
+                    <button
+                        onClick={() => window.open('https://files.gramsamruddhi.in/stfhelp', '_blank', 'noopener,noreferrer')}
+                        className="help-btn"
+                        aria-label="Help"
+                        title="Help"
+                    >
+                        ?
+                    </button>
                     {isAuthenticated ? (
                         <>
                             <div className="activity-timer">
